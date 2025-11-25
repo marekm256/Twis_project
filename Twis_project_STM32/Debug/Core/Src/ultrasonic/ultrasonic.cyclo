@@ -1,0 +1,2 @@
+../Core/Src/ultrasonic/ultrasonic.c:11:6:Ultrasonic_Init	1
+../Core/Src/ultrasonic/ultrasonic.c:15:7:Ultrasonic_GetDistance	1
