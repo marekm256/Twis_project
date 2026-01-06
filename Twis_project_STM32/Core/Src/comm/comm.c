@@ -8,6 +8,8 @@
 // comm.c
 #include "comm.h"
 
+//Marek
+
 void Comm_Init(void) {
     // TODO: init UART or chosen interface
 }
