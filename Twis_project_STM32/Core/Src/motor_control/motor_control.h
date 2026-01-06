@@ -8,8 +8,10 @@
 #ifndef SRC_MOTOR_CONTROL_MOTOR_CONTROL_H_
 #define SRC_MOTOR_CONTROL_MOTOR_CONTROL_H_
 
-void Motor_Init(void);
+#include <stdint.h>
+
+/* API pre pravý motor */
+void Motor_Init(uint32_t pwm_freq_hz);
 void Motor_Task(void);
-void Motor_SetDuty(int16_t left, int16_t right);
 
 #endif /* SRC_MOTOR_CONTROL_MOTOR_CONTROL_H_ */
