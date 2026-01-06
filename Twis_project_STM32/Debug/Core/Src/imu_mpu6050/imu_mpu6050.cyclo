@@ -1,8 +1,0 @@
-<<<<<<< HEAD
-../Core/Src/imu_mpu6050/imu_mpu6050.c:33:13:imu_uart_print	1
-../Core/Src/imu_mpu6050/imu_mpu6050.c:38:6:IMU_Init	1
-../Core/Src/imu_mpu6050/imu_mpu6050.c:98:6:IMU_Read	4
-=======
-../Core/Src/imu_mpu6050/imu_mpu6050.c:11:6:IMU_Init	1
-../Core/Src/imu_mpu6050/imu_mpu6050.c:15:6:IMU_Read	1
->>>>>>> f0626c1e1b0ce432afd47d0ec7be18ae41c45531
