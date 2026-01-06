@@ -8,8 +8,11 @@
 #ifndef SRC_MOTOR_CONTROL_MOTOR_CONTROL_H_
 #define SRC_MOTOR_CONTROL_MOTOR_CONTROL_H_
 
+#include <stdint.h>
+
 void Motor_Init(void);
 void Motor_Task(void);
 void Motor_SetDuty(int16_t left, int16_t right);
 
 #endif /* SRC_MOTOR_CONTROL_MOTOR_CONTROL_H_ */
+

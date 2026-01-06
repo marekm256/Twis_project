@@ -1,0 +1,3 @@
+../Core/Src/motor_control/motor_control.c:12:6:Motor_Init	1
+../Core/Src/motor_control/motor_control.c:16:6:Motor_Task	1
+../Core/Src/motor_control/motor_control.c:20:6:Motor_SetDuty	1

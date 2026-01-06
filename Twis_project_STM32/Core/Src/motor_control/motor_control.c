@@ -7,6 +7,7 @@
 
 // motor_control.c
 #include "motor_control.h"
+#include <stdint.h>
 
 void Motor_Init(void) {
     // TODO: setup PWM, encoders, pins

@@ -1,0 +1,3 @@
+../Core/Src/imu_mpu6050/imu_mpu6050.c:33:13:imu_uart_print	16	static
+../Core/Src/imu_mpu6050/imu_mpu6050.c:38:6:IMU_Init	96	static
+../Core/Src/imu_mpu6050/imu_mpu6050.c:98:6:IMU_Read	272	static
