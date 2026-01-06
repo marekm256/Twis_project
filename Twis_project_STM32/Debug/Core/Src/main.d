@@ -24,9 +24,14 @@ Core/Src/main.o: ../Core/Src/main.c ../Core/Inc/main.h \
  ../Drivers/STM32F3xx_HAL_Driver/Inc/stm32f3xx_hal_i2c_ex.h \
  ../Drivers/STM32F3xx_HAL_Driver/Inc/stm32f3xx_hal_pwr.h \
  ../Drivers/STM32F3xx_HAL_Driver/Inc/stm32f3xx_hal_pwr_ex.h \
+<<<<<<< HEAD
  ../Drivers/STM32F3xx_HAL_Driver/Inc/stm32f3xx_hal_uart.h \
  ../Drivers/STM32F3xx_HAL_Driver/Inc/stm32f3xx_hal_uart_ex.h \
  ../Core/Inc/i2c.h ../Core/Inc/main.h ../Core/Inc/usart.h \
+=======
+ ../Drivers/STM32F3xx_HAL_Driver/Inc/stm32f3xx_hal_tim.h \
+ ../Drivers/STM32F3xx_HAL_Driver/Inc/stm32f3xx_hal_tim_ex.h \
+>>>>>>> f0626c1e1b0ce432afd47d0ec7be18ae41c45531
  ../Core/Src/motor_control/motor_control.h ../Core/Src/comm/comm.h \
  ../Core/Src/imu_mpu6050/imu_mpu6050.h \
  ../Core/Src/ultrasonic/ultrasonic.h
@@ -56,11 +61,16 @@ Core/Src/main.o: ../Core/Src/main.c ../Core/Inc/main.h \
 ../Drivers/STM32F3xx_HAL_Driver/Inc/stm32f3xx_hal_i2c_ex.h:
 ../Drivers/STM32F3xx_HAL_Driver/Inc/stm32f3xx_hal_pwr.h:
 ../Drivers/STM32F3xx_HAL_Driver/Inc/stm32f3xx_hal_pwr_ex.h:
+<<<<<<< HEAD
 ../Drivers/STM32F3xx_HAL_Driver/Inc/stm32f3xx_hal_uart.h:
 ../Drivers/STM32F3xx_HAL_Driver/Inc/stm32f3xx_hal_uart_ex.h:
 ../Core/Inc/i2c.h:
 ../Core/Inc/main.h:
 ../Core/Inc/usart.h:
+=======
+../Drivers/STM32F3xx_HAL_Driver/Inc/stm32f3xx_hal_tim.h:
+../Drivers/STM32F3xx_HAL_Driver/Inc/stm32f3xx_hal_tim_ex.h:
+>>>>>>> f0626c1e1b0ce432afd47d0ec7be18ae41c45531
 ../Core/Src/motor_control/motor_control.h:
 ../Core/Src/comm/comm.h:
 ../Core/Src/imu_mpu6050/imu_mpu6050.h:

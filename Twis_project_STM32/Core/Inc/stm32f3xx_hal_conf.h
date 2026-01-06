@@ -57,8 +57,13 @@
 /*#define HAL_RNG_MODULE_ENABLED   */
 /*#define HAL_RTC_MODULE_ENABLED   */
 /*#define HAL_SPI_MODULE_ENABLED   */
+<<<<<<< HEAD
 /*#define HAL_TIM_MODULE_ENABLED   */
 #define HAL_UART_MODULE_ENABLED
+=======
+#define HAL_TIM_MODULE_ENABLED
+/*#define HAL_UART_MODULE_ENABLED   */
+>>>>>>> f0626c1e1b0ce432afd47d0ec7be18ae41c45531
 /*#define HAL_USART_MODULE_ENABLED   */
 /*#define HAL_IRDA_MODULE_ENABLED   */
 /*#define HAL_SMARTCARD_MODULE_ENABLED   */
