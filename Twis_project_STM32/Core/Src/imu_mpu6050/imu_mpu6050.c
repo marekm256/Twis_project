@@ -151,10 +151,7 @@ void IMU_Read(IMU_Data_t *data)
     else if (pitch_f < -TH) state = "NAKLON DOZADU";
     else                    state = "OK";
 
-    /* Print WITHOUT float formatting:
-       - cast angles to int (degrees)
-       - print raw accel/gyro ints
-    */
+
     char msg[140];
     int pitch_i = (int)pitch_f;
     int roll_i  = (int)roll_f;
