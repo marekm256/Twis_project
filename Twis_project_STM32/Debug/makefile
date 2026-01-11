@@ -64,8 +64,8 @@ all: main-build
 main-build: Twis_project.elf secondary-outputs
 
 # Tool invocations
-Twis_project.elf Twis_project.map: $(OBJS) $(USER_OBJS) C:\Users\malin\Documents\Twis_project\Twis_project_STM32\STM32F303K8TX_FLASH.ld makefile objects.list $(OPTIONAL_TOOL_DEPS)
-	arm-none-eabi-gcc -o "Twis_project.elf" @"objects.list" $(USER_OBJS) $(LIBS) -mcpu=cortex-m4 -T"C:\Users\malin\Documents\Twis_project\Twis_project_STM32\STM32F303K8TX_FLASH.ld" --specs=nosys.specs -Wl,-Map="Twis_project.map" -Wl,--gc-sections -static --specs=nano.specs -mfpu=fpv4-sp-d16 -mfloat-abi=hard -mthumb -Wl,--start-group -lc -lm -Wl,--end-group
+Twis_project.elf Twis_project.map: $(OBJS) $(USER_OBJS) C:\Users\rapco\OneDrive\Dokumenty\skola\1.ing\vrs\Twis_project\Twis_project_STM32\STM32F303K8TX_FLASH.ld makefile objects.list $(OPTIONAL_TOOL_DEPS)
+	arm-none-eabi-gcc -o "Twis_project.elf" @"objects.list" $(USER_OBJS) $(LIBS) -mcpu=cortex-m4 -T"C:\Users\rapco\OneDrive\Dokumenty\skola\1.ing\vrs\Twis_project\Twis_project_STM32\STM32F303K8TX_FLASH.ld" --specs=nosys.specs -Wl,-Map="Twis_project.map" -Wl,--gc-sections -static --specs=nano.specs -mfpu=fpv4-sp-d16 -mfloat-abi=hard -mthumb -Wl,--start-group -lc -lm -Wl,--end-group
 	@echo 'Finished building target: $@'
 	@echo ' '
 

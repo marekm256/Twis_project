@@ -23,8 +23,8 @@ C_DEPS :=
 # Every subdirectory with source files must be described here
 SUBDIRS := \
 Core/Src/comm \
-Core/Src/imu_mpu6050 \
 Core/Src \
+Core/Src/imu_mpu6050 \
 Core/Src/motor_control \
 Core/Src/ultrasonic \
 Core/Startup \

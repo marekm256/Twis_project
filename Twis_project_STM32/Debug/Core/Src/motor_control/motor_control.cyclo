@@ -1,4 +1,10 @@
+<<<<<<< HEAD
+../Core/Src/motor_control/motor_control.c:12:6:Motor_Init	1
+../Core/Src/motor_control/motor_control.c:16:6:Motor_Task	1
+../Core/Src/motor_control/motor_control.c:20:6:Motor_SetDuty	1
+=======
 ../Core/Src/motor_control/motor_control.c:18:13:Motor_ComputeTimer	3
 ../Core/Src/motor_control/motor_control.c:50:13:Motor_SetDutyPercent	2
 ../Core/Src/motor_control/motor_control.c:61:6:Motor_Init	1
 ../Core/Src/motor_control/motor_control.c:81:6:Motor_Task	3
+>>>>>>> f0626c1e1b0ce432afd47d0ec7be18ae41c45531

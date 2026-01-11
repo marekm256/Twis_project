@@ -6,7 +6,10 @@
  */
 
 #include "motor_control.h"
+<<<<<<< HEAD
+=======
 #include "main.h"   // kvôli TIM_HandleTypeDef, makrám a externom
+>>>>>>> f0626c1e1b0ce432afd47d0ec7be18ae41c45531
 #include <stdint.h>
 
 /* TIM2 handle je v main.c */

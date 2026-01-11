@@ -1,4 +1,10 @@
+<<<<<<< HEAD
+../Core/Src/motor_control/motor_control.c:12:6:Motor_Init	4	static
+../Core/Src/motor_control/motor_control.c:16:6:Motor_Task	4	static
+../Core/Src/motor_control/motor_control.c:20:6:Motor_SetDuty	16	static
+=======
 ../Core/Src/motor_control/motor_control.c:18:13:Motor_ComputeTimer	48	static
 ../Core/Src/motor_control/motor_control.c:50:13:Motor_SetDutyPercent	24	static
 ../Core/Src/motor_control/motor_control.c:61:6:Motor_Init	24	static
 ../Core/Src/motor_control/motor_control.c:81:6:Motor_Task	16	static
+>>>>>>> f0626c1e1b0ce432afd47d0ec7be18ae41c45531
