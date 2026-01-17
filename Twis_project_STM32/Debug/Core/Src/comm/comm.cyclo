@@ -1,3 +1,6 @@
-../Core/Src/comm/comm.c:11:6:Comm_Init	1
-../Core/Src/comm/comm.c:15:6:Comm_Task	1
-../Core/Src/comm/comm.c:19:6:Comm_SendStatus	1
+../Core/Src/comm/comm.c:14:13:Comm_StartRxIT	1
+../Core/Src/comm/comm.c:19:13:Comm_OnValidCmd	3
+../Core/Src/comm/comm.c:27:6:Comm_Init	1
+../Core/Src/comm/comm.c:34:6:Comm_Task	2
+../Core/Src/comm/comm.c:42:6:HAL_UART_RxCpltCallback	8
+../Core/Src/comm/comm.c:74:6:HAL_UART_ErrorCallback	2
