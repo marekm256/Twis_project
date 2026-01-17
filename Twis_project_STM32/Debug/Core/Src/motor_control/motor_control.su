@@ -1,4 +1,7 @@
-../Core/Src/motor_control/motor_control.c:18:13:Motor_ComputeTimer	48	static
-../Core/Src/motor_control/motor_control.c:50:13:Motor_SetDutyPercent	24	static
-../Core/Src/motor_control/motor_control.c:61:6:Motor_Init	24	static
-../Core/Src/motor_control/motor_control.c:81:6:Motor_Task	16	static
+../Core/Src/motor_control/motor_control.c:12:17:tim_clk_hz	40	static
+../Core/Src/motor_control/motor_control.c:22:13:compute_psc_arr	40	static
+../Core/Src/motor_control/motor_control.c:48:13:apply_freq_and_50pct	32	static
+../Core/Src/motor_control/motor_control.c:73:6:Motors_Init	8	static
+../Core/Src/motor_control/motor_control.c:85:13:pwm_start_if_needed	16	static
+../Core/Src/motor_control/motor_control.c:98:13:pwm_stop_if_running	8	static
+../Core/Src/motor_control/motor_control.c:108:6:Motors_Update	40	static

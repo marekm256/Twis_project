@@ -9,9 +9,13 @@
 #define SRC_MOTOR_CONTROL_MOTOR_CONTROL_H_
 
 #include <stdint.h>
+#include <stdbool.h>
 
-/* API pre pravý motor */
-void Motor_Init(uint32_t pwm_freq_hz);
-void Motor_Task(void);
+void Motors_Init(void);
+
+/* enable=true  -> ramp na target_freq_hz (napr. 50)
+   enable=false -> ramp na 0 a vypne PWM
+   ramp_ms definuje dobu rampy (0 = skok) */
+void Motors_Update(bool enable, uint32_t target_freq_hz, uint32_t ramp_ms);
 
 #endif /* SRC_MOTOR_CONTROL_MOTOR_CONTROL_H_ */

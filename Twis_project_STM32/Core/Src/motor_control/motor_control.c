@@ -6,92 +6,166 @@
  */
 
 #include "motor_control.h"
-#include "main.h"   // kvôli TIM_HandleTypeDef, makrám a externom
-#include <stdint.h>
+#include "main.h"
+#include "tim.h"
 
-/* TIM2 handle je v main.c */
-extern TIM_HandleTypeDef htim2;
-
-/* ========================================================= */
-/* Automatický výpočet PSC + ARR zo zadanej frekvencie       */
-/* ========================================================= */
-static void Motor_ComputeTimer(uint32_t pwm_freq,
-                               uint32_t *psc,
-                               uint32_t *arr)
+static uint32_t tim_clk_hz(void)
 {
-    uint32_t tim_clk = HAL_RCC_GetPCLK1Freq();  // TIM2 je na APB1
-    uint32_t best_arr = 0;
-    uint32_t best_psc = 0;
+    RCC_ClkInitTypeDef clk = {0};
+    uint32_t lat = 0;
+    HAL_RCC_GetClockConfig(&clk, &lat);
 
-    for (uint32_t p = 0; p <= 0xFFFF; p++)
+    uint32_t pclk1 = HAL_RCC_GetPCLK1Freq();
+    return (clk.APB1CLKDivider == RCC_HCLK_DIV1) ? pclk1 : (2u * pclk1);
+}
+
+static void compute_psc_arr(uint32_t pwm_hz, uint32_t *psc, uint32_t *arr)
+{
+    uint32_t clk = tim_clk_hz();
+
+    if (pwm_hz < 1u) pwm_hz = 1u;
+
+    for (uint32_t p = 0; p <= 0xFFFFu; p++)
     {
-        uint32_t tmp_arr = (tim_clk / ((p + 1u) * pwm_freq)) - 1u;
+        uint32_t denom = (p + 1u) * pwm_hz;
+        if (denom == 0u) continue;
 
-        if (tmp_arr <= 0xFFFF)
-        {
-            best_psc = p;
-            best_arr = tmp_arr;
-            break;   // prvý platný → najväčší ARR
+        uint32_t a = (clk / denom);
+        if (a == 0u) continue;
+        a -= 1u;
+
+        if (a <= 0xFFFFu) {
+            *psc = p;
+            *arr = a;
+            return;
         }
     }
 
-    *psc = best_psc;
-    *arr = best_arr;
+    *psc = 0xFFFFu;
+    *arr = 0xFFFFu;
 }
 
-/* jednoduchý test */
-#define MOTOR_DUTY_START   20u   // %
-#define MOTOR_DUTY_MAX     50u   // %
-#define MOTOR_STEP         5u    // %
-#define MOTOR_STEP_MS      500u  // ms
-
-static uint8_t duty = MOTOR_DUTY_START;
-
-static void Motor_SetDutyPercent(uint8_t pct)
-{
-    if (pct > 100u) pct = 100u;
-
-    /* ARR je v registri, keďže CubeMX nastaví period */
-    uint32_t arr = __HAL_TIM_GET_AUTORELOAD(&htim2);
-    uint32_t ccr = (arr * (uint32_t)pct) / 100u;
-
-    __HAL_TIM_SET_COMPARE(&htim2, TIM_CHANNEL_1, ccr);
-}
-
-void Motor_Init(uint32_t pwm_freq_hz)
+static void apply_freq_and_50pct(uint32_t freq_hz)
 {
     uint32_t psc, arr;
+    compute_psc_arr(freq_hz, &psc, &arr);
 
-    Motor_ComputeTimer(pwm_freq_hz, &psc, &arr);
+    __HAL_TIM_SET_PRESCALER(&htim3, psc);
+    __HAL_TIM_SET_AUTORELOAD(&htim3, arr);
 
-    /* stop PWM ak už bežal */
-    HAL_TIM_PWM_Stop(&htim2, TIM_CHANNEL_1);
+    uint32_t ccr = (arr + 1u) / 2u; /* 50 % */
+    __HAL_TIM_SET_COMPARE(&htim3, TIM_CHANNEL_1, ccr);
+    __HAL_TIM_SET_COMPARE(&htim3, TIM_CHANNEL_2, ccr);
 
-    __HAL_TIM_SET_PRESCALER(&htim2, psc);
-    __HAL_TIM_SET_AUTORELOAD(&htim2, arr);
-    __HAL_TIM_SET_COMPARE(&htim2, TIM_CHANNEL_1, 0);
-
-    /* update registre */
-    __HAL_TIM_SET_COUNTER(&htim2, 0);
-    HAL_TIM_GenerateEvent(&htim2, TIM_EVENTSOURCE_UPDATE);
-
-    HAL_TIM_PWM_Start(&htim2, TIM_CHANNEL_1);
+    __HAL_TIM_SET_COUNTER(&htim3, 0u);
+    HAL_TIM_GenerateEvent(&htim3, TIM_EVENTSOURCE_UPDATE);
 }
 
-void Motor_Task(void)
+static bool pwm_running = false;
+
+static uint32_t cur_freq = 0u;
+static uint32_t tgt_freq = 0u;
+
+static uint32_t last_step_tick = 0u;
+static uint32_t step_period_ms = 10u;  /* update každých 10 ms */
+static uint32_t step_hz = 1u;          /* prepočíta sa podľa ramp_ms */
+
+void Motors_Init(void)
 {
-    static uint32_t last = 0;
-    uint32_t now = HAL_GetTick();
+    /* istota: vypnuté */
+    HAL_TIM_PWM_Stop(&htim3, TIM_CHANNEL_1);
+    HAL_TIM_PWM_Stop(&htim3, TIM_CHANNEL_2);
+    pwm_running = false;
 
-    if ((now - last) >= MOTOR_STEP_MS)
+    cur_freq = 0u;
+    tgt_freq = 0u;
+    last_step_tick = HAL_GetTick();
+}
+
+static void pwm_start_if_needed(uint32_t start_freq_hz)
+{
+    if (!pwm_running)
     {
-        last = now;
+        apply_freq_and_50pct(start_freq_hz);
 
-        if (duty + MOTOR_STEP <= MOTOR_DUTY_MAX) duty += MOTOR_STEP;
-        else duty = MOTOR_DUTY_START;
+        HAL_TIM_PWM_Start(&htim3, TIM_CHANNEL_1);
+        HAL_TIM_PWM_Start(&htim3, TIM_CHANNEL_2);
 
-        Motor_SetDutyPercent(duty);
+        pwm_running = true;
     }
 }
 
+static void pwm_stop_if_running(void)
+{
+    if (pwm_running)
+    {
+        HAL_TIM_PWM_Stop(&htim3, TIM_CHANNEL_1);
+        HAL_TIM_PWM_Stop(&htim3, TIM_CHANNEL_2);
+        pwm_running = false;
+    }
+}
 
+void Motors_Update(bool enable, uint32_t target_freq_hz, uint32_t ramp_ms)
+{
+    tgt_freq = enable ? target_freq_hz : 0u;
+
+    /* ramp_ms = 0 -> skok */
+    if (ramp_ms == 0u)
+    {
+        cur_freq = tgt_freq;
+
+        if (cur_freq == 0u) {
+            pwm_stop_if_running();
+        } else {
+            pwm_start_if_needed(cur_freq);
+            apply_freq_and_50pct(cur_freq);
+        }
+        return;
+    }
+
+    /* prepočet kroku rampy (Hz per step) */
+    if (target_freq_hz < 1u) target_freq_hz = 1u;
+
+    uint32_t steps = ramp_ms / step_period_ms;
+    if (steps < 1u) steps = 1u;
+
+    step_hz = (enable ? target_freq_hz : cur_freq);
+    step_hz = (step_hz + steps - 1u) / steps; /* ceil */
+    if (step_hz < 1u) step_hz = 1u;
+
+    uint32_t now = HAL_GetTick();
+    if ((now - last_step_tick) < step_period_ms) return;
+    last_step_tick = now;
+
+    /* rampovanie */
+    if (cur_freq < tgt_freq)
+    {
+        if (cur_freq == 0u) {
+            /* pri štarte sa najprv zapne PWM na 1 Hz, aby timer bežal */
+            pwm_start_if_needed(1u);
+            cur_freq = 1u;
+            apply_freq_and_50pct(cur_freq);
+            return;
+        }
+
+        uint32_t next = cur_freq + step_hz;
+        cur_freq = (next > tgt_freq) ? tgt_freq : next;
+        apply_freq_and_50pct(cur_freq);
+    }
+    else if (cur_freq > tgt_freq)
+    {
+        if (cur_freq <= step_hz) cur_freq = 0u;
+        else cur_freq -= step_hz;
+
+        if (cur_freq == 0u) {
+            pwm_stop_if_running();
+        } else {
+            apply_freq_and_50pct(cur_freq);
+        }
+    }
+    else
+    {
+        /* drží cieľ */
+        if (cur_freq == 0u) pwm_stop_if_running();
+    }
+}

@@ -18,13 +18,23 @@
 /* USER CODE END Header */
 /* Includes ------------------------------------------------------------------*/
 #include "main.h"
+#include "tim.h"
+#include "usart.h"
+#include "gpio.h"
 
 /* Private includes ----------------------------------------------------------*/
 /* USER CODE BEGIN Includes */
+
 #include "motor_control/motor_control.h"
+#include <stdbool.h>
+#include <string.h>
+
+
 #include "comm/comm.h"
 #include "imu_mpu6050/imu_mpu6050.h"
 #include "ultrasonic/ultrasonic.h"
+
+
 /* USER CODE END Includes */
 
 /* Private typedef -----------------------------------------------------------*/
@@ -35,6 +45,9 @@
 /* Private define ------------------------------------------------------------*/
 /* USER CODE BEGIN PD */
 
+/* timeout pre "pustenie klávesy" */
+#define KEY_RELEASE_TIMEOUT_MS  150
+
 /* USER CODE END PD */
 
 /* Private macro -------------------------------------------------------------*/
@@ -43,16 +56,19 @@
 /* USER CODE END PM */
 
 /* Private variables ---------------------------------------------------------*/
-TIM_HandleTypeDef htim2;
 
 /* USER CODE BEGIN PV */
+
+
+static uint8_t uart_rx_char;
+
+static volatile bool key_w = false;
+static volatile uint32_t key_w_last_tick = 0;
 
 /* USER CODE END PV */
 
 /* Private function prototypes -----------------------------------------------*/
 void SystemClock_Config(void);
-static void MX_GPIO_Init(void);
-static void MX_TIM2_Init(void);
 /* USER CODE BEGIN PFP */
 
 /* USER CODE END PFP */
@@ -91,10 +107,17 @@ int main(void)
 
   /* Initialize all configured peripherals */
   MX_GPIO_Init();
-  MX_TIM2_Init();
+  MX_TIM3_Init();
+  MX_USART2_UART_Init();
   /* USER CODE BEGIN 2 */
 
-  Motor_Init(20000); // PWM frequency input
+  // Testing uart communication
+  const char *msg = "--- Connection with STM32 has been established ---\r\n";
+  HAL_UART_Transmit(&huart2, (uint8_t*)msg, strlen(msg), 100);
+  HAL_UART_Receive_IT(&huart2, &uart_rx_char, 1);
+  HAL_GPIO_TogglePin(GPIOA, GPIO_PIN_7);
+
+  Motors_Init();
 
   //Comm_Init();
   //IMU_Init();
@@ -105,8 +128,13 @@ int main(void)
   /* USER CODE BEGIN WHILE */
   while (1)
   {
+	  bool w = Key_w_IsPressed();
+
+	  /* keď držíš W → cieľ 50 Hz; keď pustíš → cieľ 0 Hz (a vypne PWM) */
+	  Motors_Update(w, 50u, 1200u);   /* ramp_ms si nastav podľa potreby */
+
     /* USER CODE END WHILE */
-	  Motor_Task();
+
     /* USER CODE BEGIN 3 */
   }
   /* USER CODE END 3 */
@@ -148,85 +176,38 @@ void SystemClock_Config(void)
   }
 }
 
-/**
-  * @brief TIM2 Initialization Function
-  * @param None
-  * @retval None
-  */
-static void MX_TIM2_Init(void)
-{
-
-  /* USER CODE BEGIN TIM2_Init 0 */
-
-  /* USER CODE END TIM2_Init 0 */
-
-  TIM_ClockConfigTypeDef sClockSourceConfig = {0};
-  TIM_MasterConfigTypeDef sMasterConfig = {0};
-  TIM_OC_InitTypeDef sConfigOC = {0};
-
-  /* USER CODE BEGIN TIM2_Init 1 */
-
-  /* USER CODE END TIM2_Init 1 */
-  htim2.Instance = TIM2;
-  htim2.Init.Prescaler = 7999;
-  htim2.Init.CounterMode = TIM_COUNTERMODE_UP;
-  htim2.Init.Period = 9;
-  htim2.Init.ClockDivision = TIM_CLOCKDIVISION_DIV1;
-  htim2.Init.AutoReloadPreload = TIM_AUTORELOAD_PRELOAD_DISABLE;
-  if (HAL_TIM_Base_Init(&htim2) != HAL_OK)
-  {
-    Error_Handler();
-  }
-  sClockSourceConfig.ClockSource = TIM_CLOCKSOURCE_INTERNAL;
-  if (HAL_TIM_ConfigClockSource(&htim2, &sClockSourceConfig) != HAL_OK)
-  {
-    Error_Handler();
-  }
-  if (HAL_TIM_PWM_Init(&htim2) != HAL_OK)
-  {
-    Error_Handler();
-  }
-  sMasterConfig.MasterOutputTrigger = TIM_TRGO_RESET;
-  sMasterConfig.MasterSlaveMode = TIM_MASTERSLAVEMODE_DISABLE;
-  if (HAL_TIMEx_MasterConfigSynchronization(&htim2, &sMasterConfig) != HAL_OK)
-  {
-    Error_Handler();
-  }
-  sConfigOC.OCMode = TIM_OCMODE_PWM1;
-  sConfigOC.Pulse = 0;
-  sConfigOC.OCPolarity = TIM_OCPOLARITY_HIGH;
-  sConfigOC.OCFastMode = TIM_OCFAST_DISABLE;
-  if (HAL_TIM_PWM_ConfigChannel(&htim2, &sConfigOC, TIM_CHANNEL_1) != HAL_OK)
-  {
-    Error_Handler();
-  }
-  /* USER CODE BEGIN TIM2_Init 2 */
-
-  /* USER CODE END TIM2_Init 2 */
-  HAL_TIM_MspPostInit(&htim2);
-
-}
-
-/**
-  * @brief GPIO Initialization Function
-  * @param None
-  * @retval None
-  */
-static void MX_GPIO_Init(void)
-{
-  /* USER CODE BEGIN MX_GPIO_Init_1 */
-
-  /* USER CODE END MX_GPIO_Init_1 */
-
-  /* GPIO Ports Clock Enable */
-  __HAL_RCC_GPIOA_CLK_ENABLE();
-
-  /* USER CODE BEGIN MX_GPIO_Init_2 */
-
-  /* USER CODE END MX_GPIO_Init_2 */
-}
-
 /* USER CODE BEGIN 4 */
+
+void HAL_UART_RxCpltCallback(UART_HandleTypeDef *huart)
+{
+	HAL_GPIO_TogglePin(GPIOA, GPIO_PIN_7);
+
+    if (huart->Instance == USART2)
+    {
+        /* LED indikácia RX */
+        HAL_GPIO_TogglePin(GPIOA, GPIO_PIN_7);
+
+        /* echo späť do PC */
+        HAL_UART_Transmit(&huart2, &uart_rx_char, 1, 10);
+
+        /* rearm RX */
+        HAL_UART_Receive_IT(&huart2, &uart_rx_char, 1);
+    }
+}
+
+
+
+bool Key_w_IsPressed(void)
+{
+    if (key_w)
+    {
+        if ((HAL_GetTick() - key_w_last_tick) > KEY_RELEASE_TIMEOUT_MS)
+        {
+            key_w = false;
+        }
+    }
+    return key_w;
+}
 
 /* USER CODE END 4 */
 
