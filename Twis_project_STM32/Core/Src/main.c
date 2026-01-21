@@ -4,16 +4,6 @@
   * @file           : main.c
   * @brief          : Main program body
   ******************************************************************************
-  * @attention
-  *
-  * Copyright (c) 2025 STMicroelectronics.
-  * All rights reserved.
-  *
-  * This software is licensed under terms that can be found in the LICENSE file
-  * in the root directory of this software component.
-  * If no LICENSE file comes with this software, it is provided AS-IS.
-  *
-  ******************************************************************************
   */
 /* USER CODE END Header */
 /* Includes ------------------------------------------------------------------*/
@@ -24,17 +14,8 @@
 
 /* Private includes ----------------------------------------------------------*/
 /* USER CODE BEGIN Includes */
-
 #include "motor_control/motor_control.h"
-#include <stdbool.h>
-#include <string.h>
-
-
 #include "comm/comm.h"
-#include "imu_mpu6050/imu_mpu6050.h"
-#include "ultrasonic/ultrasonic.h"
-
-
 /* USER CODE END Includes */
 
 /* Private typedef -----------------------------------------------------------*/
@@ -44,9 +25,6 @@
 
 /* Private define ------------------------------------------------------------*/
 /* USER CODE BEGIN PD */
-
-/* timeout pre "pustenie klávesy" */
-#define KEY_RELEASE_TIMEOUT_MS  150
 
 /* USER CODE END PD */
 
@@ -58,12 +36,6 @@
 /* Private variables ---------------------------------------------------------*/
 
 /* USER CODE BEGIN PV */
-
-
-static uint8_t uart_rx_char;
-
-static volatile bool key_w = false;
-static volatile uint32_t key_w_last_tick = 0;
 
 /* USER CODE END PV */
 
@@ -108,31 +80,22 @@ int main(void)
   /* Initialize all configured peripherals */
   MX_GPIO_Init();
   MX_TIM3_Init();
-  MX_USART2_UART_Init();
+  MX_USART1_UART_Init();
   /* USER CODE BEGIN 2 */
 
-  // Testing uart communication
-  const char *msg = "--- Connection with STM32 has been established ---\r\n";
-  HAL_UART_Transmit(&huart2, (uint8_t*)msg, strlen(msg), 100);
-  HAL_UART_Receive_IT(&huart2, &uart_rx_char, 1);
-  HAL_GPIO_TogglePin(GPIOA, GPIO_PIN_7);
-
-  Motors_Init();
-
-  //Comm_Init();
-  //IMU_Init();
-  //Ultrasonic_Init();
+  Comm_Init();
   /* USER CODE END 2 */
 
   /* Infinite loop */
   /* USER CODE BEGIN WHILE */
   while (1)
   {
-	  bool w = Key_w_IsPressed();
 
-	  /* keď držíš W → cieľ 50 Hz; keď pustíš → cieľ 0 Hz (a vypne PWM) */
-	  Motors_Update(w, 50u, 1200u);   /* ramp_ms si nastav podľa potreby */
-
+	if (g_keys_state) {
+		HAL_GPIO_WritePin(GPIOB, GPIO_PIN_3, GPIO_PIN_SET);
+	} else {
+		HAL_GPIO_WritePin(GPIOB, GPIO_PIN_3, GPIO_PIN_RESET);
+	}
     /* USER CODE END WHILE */
 
     /* USER CODE BEGIN 3 */
@@ -148,6 +111,7 @@ void SystemClock_Config(void)
 {
   RCC_OscInitTypeDef RCC_OscInitStruct = {0};
   RCC_ClkInitTypeDef RCC_ClkInitStruct = {0};
+  RCC_PeriphCLKInitTypeDef PeriphClkInit = {0};
 
   /** Initializes the RCC Oscillators according to the specified parameters
   * in the RCC_OscInitTypeDef structure.
@@ -174,40 +138,15 @@ void SystemClock_Config(void)
   {
     Error_Handler();
   }
+  PeriphClkInit.PeriphClockSelection = RCC_PERIPHCLK_USART1;
+  PeriphClkInit.Usart1ClockSelection = RCC_USART1CLKSOURCE_PCLK1;
+  if (HAL_RCCEx_PeriphCLKConfig(&PeriphClkInit) != HAL_OK)
+  {
+    Error_Handler();
+  }
 }
 
 /* USER CODE BEGIN 4 */
-
-void HAL_UART_RxCpltCallback(UART_HandleTypeDef *huart)
-{
-	HAL_GPIO_TogglePin(GPIOA, GPIO_PIN_7);
-
-    if (huart->Instance == USART2)
-    {
-        /* LED indikácia RX */
-        HAL_GPIO_TogglePin(GPIOA, GPIO_PIN_7);
-
-        /* echo späť do PC */
-        HAL_UART_Transmit(&huart2, &uart_rx_char, 1, 10);
-
-        /* rearm RX */
-        HAL_UART_Receive_IT(&huart2, &uart_rx_char, 1);
-    }
-}
-
-
-
-bool Key_w_IsPressed(void)
-{
-    if (key_w)
-    {
-        if ((HAL_GetTick() - key_w_last_tick) > KEY_RELEASE_TIMEOUT_MS)
-        {
-            key_w = false;
-        }
-    }
-    return key_w;
-}
 
 /* USER CODE END 4 */
 
