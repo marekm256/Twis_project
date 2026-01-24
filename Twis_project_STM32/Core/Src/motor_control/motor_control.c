@@ -8,21 +8,52 @@
 #include "motor_control.h"
 #include "main.h"
 #include "tim.h"
+#include <stdbool.h>
 
-static uint32_t tim_clk_hz(void)
+/* TIM2 CH1 = Left motor, TIM3 CH1 = Right motor */
+#define LEFT_TIM     htim2
+#define LEFT_CH      TIM_CHANNEL_1
+#define RIGHT_TIM    htim3
+#define RIGHT_CH     TIM_CHANNEL_1
+#define MAX_FREQ_HZ  25000u
+
+/* Manual ramp tuning (edit here) */
+static uint32_t g_step_period_ms = 10u;  /* update period */
+static float    g_step_pct       = 1.0f; /* percent per step; <=0 => no ramp (jump) */
+
+static float s_curL = 0.0f, s_curR = 0.0f;
+static float s_tgtL = 0.0f, s_tgtR = 0.0f;
+static uint32_t s_lastTick = 0u;
+
+static bool s_runL = false;
+static bool s_runR = false;
+
+/* Direction pins (define in CubeMX so main.h contains these symbols) */
+#define L_DIR_PORT   L_DIR_GPIO_Port
+#define L_DIR_PIN    L_DIR_Pin
+#define R_DIR_PORT   R_DIR_GPIO_Port
+#define R_DIR_PIN    R_DIR_Pin
+
+typedef enum { MOTOR_FWD = 0, MOTOR_REV = 1 } motor_dir_t;
+
+static motor_dir_t s_dirL = MOTOR_FWD;
+static motor_dir_t s_dirR = MOTOR_FWD;
+
+// Returns the effective APB1 timer clock (TIM2/TIM3)
+static uint32_t tim_apb1_clk_hz(void)
 {
     RCC_ClkInitTypeDef clk = {0};
-    uint32_t lat = 0;
+    uint32_t lat;
     HAL_RCC_GetClockConfig(&clk, &lat);
 
     uint32_t pclk1 = HAL_RCC_GetPCLK1Freq();
     return (clk.APB1CLKDivider == RCC_HCLK_DIV1) ? pclk1 : (2u * pclk1);
 }
 
+// Computes PSC and ARR values so that the timer generates a PWM signal with the requested frequency (pwm_hz), respecting 16-bit timer limits.
 static void compute_psc_arr(uint32_t pwm_hz, uint32_t *psc, uint32_t *arr)
 {
-    uint32_t clk = tim_clk_hz();
-
+    uint32_t clk = tim_apb1_clk_hz();
     if (pwm_hz < 1u) pwm_hz = 1u;
 
     for (uint32_t p = 0; p <= 0xFFFFu; p++)
@@ -34,138 +65,128 @@ static void compute_psc_arr(uint32_t pwm_hz, uint32_t *psc, uint32_t *arr)
         if (a == 0u) continue;
         a -= 1u;
 
-        if (a <= 0xFFFFu) {
-            *psc = p;
-            *arr = a;
-            return;
-        }
+        if (a <= 0xFFFFu) { *psc = p; *arr = a; return; }
     }
 
     *psc = 0xFFFFu;
     *arr = 0xFFFFu;
 }
 
-static void apply_freq_and_50pct(uint32_t freq_hz)
+// Maps 0..100% to 0..MAX_FREQ_HZ (0% => stop PWM).
+static uint32_t pct_to_freq_hz(float pct)
 {
-    uint32_t psc, arr;
-    compute_psc_arr(freq_hz, &psc, &arr);
+    if (pct <= 0.0f)  return 0u;
+    if (pct >= 100.0f) return MAX_FREQ_HZ;
 
-    __HAL_TIM_SET_PRESCALER(&htim3, psc);
-    __HAL_TIM_SET_AUTORELOAD(&htim3, arr);
-
-    uint32_t ccr = (arr + 1u) / 2u; /* 50 % */
-    __HAL_TIM_SET_COMPARE(&htim3, TIM_CHANNEL_1, ccr);
-    __HAL_TIM_SET_COMPARE(&htim3, TIM_CHANNEL_2, ccr);
-
-    __HAL_TIM_SET_COUNTER(&htim3, 0u);
-    HAL_TIM_GenerateEvent(&htim3, TIM_EVENTSOURCE_UPDATE);
+    float f = (pct * (float)MAX_FREQ_HZ) / 100.0f;
+    if (f < 1.0f) f = 1.0f;
+    return (uint32_t)(f + 0.5f);
 }
 
-static bool pwm_running = false;
-
-static uint32_t cur_freq = 0u;
-static uint32_t tgt_freq = 0u;
-
-static uint32_t last_step_tick = 0u;
-static uint32_t step_period_ms = 10u;  /* update každých 10 ms */
-static uint32_t step_hz = 1u;          /* prepočíta sa podľa ramp_ms */
-
-void Motors_Init(void)
+// Sets PWM frequency on a given timer/channel with fixed 50% duty, and starts/stops output as needed.
+static void pwm_set_freq_50pct(TIM_HandleTypeDef *htim, uint32_t channel, bool *running, uint32_t freq_hz)
 {
-    /* istota: vypnuté */
-    HAL_TIM_PWM_Stop(&htim3, TIM_CHANNEL_1);
-    HAL_TIM_PWM_Stop(&htim3, TIM_CHANNEL_2);
-    pwm_running = false;
-
-    cur_freq = 0u;
-    tgt_freq = 0u;
-    last_step_tick = HAL_GetTick();
-}
-
-static void pwm_start_if_needed(uint32_t start_freq_hz)
-{
-    if (!pwm_running)
-    {
-        apply_freq_and_50pct(start_freq_hz);
-
-        HAL_TIM_PWM_Start(&htim3, TIM_CHANNEL_1);
-        HAL_TIM_PWM_Start(&htim3, TIM_CHANNEL_2);
-
-        pwm_running = true;
-    }
-}
-
-static void pwm_stop_if_running(void)
-{
-    if (pwm_running)
-    {
-        HAL_TIM_PWM_Stop(&htim3, TIM_CHANNEL_1);
-        HAL_TIM_PWM_Stop(&htim3, TIM_CHANNEL_2);
-        pwm_running = false;
-    }
-}
-
-void Motors_Update(bool enable, uint32_t target_freq_hz, uint32_t ramp_ms)
-{
-    tgt_freq = enable ? target_freq_hz : 0u;
-
-    /* ramp_ms = 0 -> skok */
-    if (ramp_ms == 0u)
-    {
-        cur_freq = tgt_freq;
-
-        if (cur_freq == 0u) {
-            pwm_stop_if_running();
-        } else {
-            pwm_start_if_needed(cur_freq);
-            apply_freq_and_50pct(cur_freq);
+    if (freq_hz == 0u) {
+        if (*running) {
+            HAL_TIM_PWM_Stop(htim, channel);
+            *running = false;
         }
         return;
     }
 
-    /* prepočet kroku rampy (Hz per step) */
-    if (target_freq_hz < 1u) target_freq_hz = 1u;
+    uint32_t psc, arr;
+    compute_psc_arr(freq_hz, &psc, &arr);
 
-    uint32_t steps = ramp_ms / step_period_ms;
-    if (steps < 1u) steps = 1u;
+    __HAL_TIM_SET_PRESCALER(htim, psc);
+    __HAL_TIM_SET_AUTORELOAD(htim, arr);
 
-    step_hz = (enable ? target_freq_hz : cur_freq);
-    step_hz = (step_hz + steps - 1u) / steps; /* ceil */
-    if (step_hz < 1u) step_hz = 1u;
+    __HAL_TIM_SET_COMPARE(htim, channel, (arr + 1u) / 2u); /* 50% */
+    __HAL_TIM_SET_COUNTER(htim, 0u);
+    HAL_TIM_GenerateEvent(htim, TIM_EVENTSOURCE_UPDATE);
 
-    uint32_t now = HAL_GetTick();
-    if ((now - last_step_tick) < step_period_ms) return;
-    last_step_tick = now;
-
-    /* rampovanie */
-    if (cur_freq < tgt_freq)
-    {
-        if (cur_freq == 0u) {
-            /* pri štarte sa najprv zapne PWM na 1 Hz, aby timer bežal */
-            pwm_start_if_needed(1u);
-            cur_freq = 1u;
-            apply_freq_and_50pct(cur_freq);
-            return;
-        }
-
-        uint32_t next = cur_freq + step_hz;
-        cur_freq = (next > tgt_freq) ? tgt_freq : next;
-        apply_freq_and_50pct(cur_freq);
-    }
-    else if (cur_freq > tgt_freq)
-    {
-        if (cur_freq <= step_hz) cur_freq = 0u;
-        else cur_freq -= step_hz;
-
-        if (cur_freq == 0u) {
-            pwm_stop_if_running();
-        } else {
-            apply_freq_and_50pct(cur_freq);
-        }
-    }
-    else
-    {
-        /* drží cieľ */
-        if (cur_freq == 0u) pwm_stop_if_running();
+    if (!*running) {
+        HAL_TIM_PWM_Start(htim, channel);
+        *running = true;
     }
 }
+
+static void motor_set_dir_left(motor_dir_t dir)
+{
+    HAL_GPIO_WritePin(L_DIR_PORT, L_DIR_PIN,
+                      (dir == MOTOR_REV) ? GPIO_PIN_SET : GPIO_PIN_RESET);
+}
+
+static void motor_set_dir_right(motor_dir_t dir)
+{
+    HAL_GPIO_WritePin(R_DIR_PORT, R_DIR_PIN,
+                      (dir == MOTOR_REV) ? GPIO_PIN_SET : GPIO_PIN_RESET);
+}
+
+// Initializes the motor PWM control state: stops TIM2/TIM3 PWM outputs, resets ramp variables, and captures the initial tick time.
+void Motors_Init(void)
+{
+    HAL_TIM_PWM_Stop(&LEFT_TIM,  LEFT_CH);
+    HAL_TIM_PWM_Stop(&RIGHT_TIM, RIGHT_CH);
+    s_runL = false;
+    s_runR = false;
+
+    s_curL = s_curR = 0.0f;
+    s_tgtL = s_tgtR = 0.0f;
+    s_lastTick = HAL_GetTick();
+
+    s_dirL = MOTOR_FWD;
+    s_dirR = MOTOR_FWD;
+    motor_set_dir_left(s_dirL);
+    motor_set_dir_right(s_dirR);
+}
+
+// Updates left/right "speed" in percent (0% => stop, 100% => 25 kHz, -100% => reverse 25kHz) using ramp.
+void Motors_Speed_inPercent(float left_pct, float right_pct)
+{
+    motor_dir_t reqDirL = (left_pct  < 0.0f) ? MOTOR_REV : MOTOR_FWD;
+    motor_dir_t reqDirR = (right_pct < 0.0f) ? MOTOR_REV : MOTOR_FWD;
+
+    float absL = (left_pct  < 0.0f) ? -left_pct  : left_pct;
+    float absR = (right_pct < 0.0f) ? -right_pct : right_pct;
+
+    if (absL > 100.0f) absL = 100.0f;
+    if (absR > 100.0f) absR = 100.0f;
+
+    bool wantFlipL = (reqDirL != s_dirL);
+    bool wantFlipR = (reqDirR != s_dirR);
+
+    if (wantFlipL && s_curL > 0.0f) absL = 0.0f;
+    if (wantFlipR && s_curR > 0.0f) absR = 0.0f;
+
+    s_tgtL = absL;
+    s_tgtR = absR;
+
+    uint32_t now = HAL_GetTick();
+    if ((now - s_lastTick) < g_step_period_ms) return;
+    s_lastTick = now;
+
+    float step = g_step_pct;
+    if (step <= 0.0f) {
+        s_curL = s_tgtL;
+        s_curR = s_tgtR;
+    } else {
+        if (s_curL < s_tgtL) { s_curL += step; if (s_curL > s_tgtL) s_curL = s_tgtL; }
+        else if (s_curL > s_tgtL) { s_curL -= step; if (s_curL < s_tgtL) s_curL = s_tgtL; }
+
+        if (s_curR < s_tgtR) { s_curR += step; if (s_curR > s_tgtR) s_curR = s_tgtR; }
+        else if (s_curR > s_tgtR) { s_curR -= step; if (s_curR < s_tgtR) s_curR = s_tgtR; }
+    }
+
+    if (wantFlipL && s_curL == 0.0f) {
+        s_dirL = reqDirL;
+        motor_set_dir_left(s_dirL);
+    }
+    if (wantFlipR && s_curR == 0.0f) {
+        s_dirR = reqDirR;
+        motor_set_dir_right(s_dirR);
+    }
+
+    pwm_set_freq_50pct(&LEFT_TIM,  LEFT_CH,  &s_runL, pct_to_freq_hz(s_curL));
+    pwm_set_freq_50pct(&RIGHT_TIM, RIGHT_CH, &s_runR, pct_to_freq_hz(s_curR));
+}
+

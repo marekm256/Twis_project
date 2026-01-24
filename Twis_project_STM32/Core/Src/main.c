@@ -81,21 +81,35 @@ int main(void)
   MX_GPIO_Init();
   MX_TIM3_Init();
   MX_USART1_UART_Init();
+  MX_TIM2_Init();
   /* USER CODE BEGIN 2 */
 
   Comm_Init();
+  Motors_Init();
   /* USER CODE END 2 */
 
   /* Infinite loop */
   /* USER CODE BEGIN WHILE */
   while (1)
   {
+	  float left  = 0.0f;
+	  float right = 0.0f;
 
-	if (g_keys_state) {
-		HAL_GPIO_WritePin(GPIOB, GPIO_PIN_3, GPIO_PIN_SET);
-	} else {
-		HAL_GPIO_WritePin(GPIOB, GPIO_PIN_3, GPIO_PIN_RESET);
-	}
+	  if (g_keys_state & KEY_W) { // forward
+		  left  = -1.0f;
+		  right = 1.0f;
+	  } else if (g_keys_state & KEY_S) { // reverse
+		  left  = 1.0f;
+		  right = -1.0f;
+	  } else if (g_keys_state & KEY_A) { // turn left
+		  left  = 0.5f;
+		  right = 0.5f;
+	  } else if (g_keys_state & KEY_D) { // turn right
+		  left  = -0.5f;
+		  right = -0.5f;
+	  }
+
+	  Motors_Speed_inPercent(left, right);
     /* USER CODE END WHILE */
 
     /* USER CODE BEGIN 3 */

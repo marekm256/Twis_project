@@ -61,6 +61,10 @@ bool Key_w_IsPressed(void);
 /* USER CODE END EFP */
 
 /* Private defines -----------------------------------------------------------*/
+#define L_DIR_Pin GPIO_PIN_4
+#define L_DIR_GPIO_Port GPIOA
+#define R_DIR_Pin GPIO_PIN_5
+#define R_DIR_GPIO_Port GPIOA
 
 /* USER CODE BEGIN Private defines */
 
