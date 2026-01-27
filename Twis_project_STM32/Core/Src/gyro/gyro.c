@@ -6,7 +6,7 @@
  */
 
 // imu_mpu6050.c
-#include "imu_mpu6050.h"
+#include <gyro.h>
 
 void IMU_Init(void) {
     // TODO: init I2C, wake MPU6050

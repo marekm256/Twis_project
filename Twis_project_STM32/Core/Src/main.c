@@ -14,8 +14,8 @@
 
 /* Private includes ----------------------------------------------------------*/
 /* USER CODE BEGIN Includes */
-#include "motor_control/motor_control.h"
-#include "comm/comm.h"
+#include "motor_control.h"
+#include "comm.h"
 /* USER CODE END Includes */
 
 /* Private typedef -----------------------------------------------------------*/
@@ -92,24 +92,8 @@ int main(void)
   /* USER CODE BEGIN WHILE */
   while (1)
   {
-	  float left  = 0.0f;
-	  float right = 0.0f;
+	Motors_Control(g_keys_state);
 
-	  if (g_keys_state & KEY_W) { // forward
-		  left  = -1.0f;
-		  right = 1.0f;
-	  } else if (g_keys_state & KEY_S) { // reverse
-		  left  = 1.0f;
-		  right = -1.0f;
-	  } else if (g_keys_state & KEY_A) { // turn left
-		  left  = 0.5f;
-		  right = 0.5f;
-	  } else if (g_keys_state & KEY_D) { // turn right
-		  left  = -0.5f;
-		  right = -0.5f;
-	  }
-
-	  Motors_Speed_inPercent(left, right);
     /* USER CODE END WHILE */
 
     /* USER CODE BEGIN 3 */

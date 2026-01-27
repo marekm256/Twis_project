@@ -13,7 +13,7 @@ RM := rm -rf
 -include Core/Startup/subdir.mk
 -include Core/Src/ultrasonic/subdir.mk
 -include Core/Src/motor_control/subdir.mk
--include Core/Src/imu_mpu6050/subdir.mk
+-include Core/Src/gyro/subdir.mk
 -include Core/Src/comm/subdir.mk
 -include Core/Src/subdir.mk
 -include objects.mk

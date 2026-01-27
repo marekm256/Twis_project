@@ -8,13 +8,13 @@
 #include "motor_control.h"
 #include "main.h"
 #include "tim.h"
-#include <stdbool.h>
+#include "comm.h"
 
 /* TIM2 CH1 = Left motor, TIM3 CH1 = Right motor */
 #define LEFT_TIM     htim2
 #define LEFT_CH      TIM_CHANNEL_1
 #define RIGHT_TIM    htim3
-#define RIGHT_CH     TIM_CHANNEL_1
+#define RIGHT_CH     TIM_CHANNEL_2
 #define MAX_FREQ_HZ  25000u
 
 /* Manual ramp tuning (edit here) */
@@ -27,12 +27,6 @@ static uint32_t s_lastTick = 0u;
 
 static bool s_runL = false;
 static bool s_runR = false;
-
-/* Direction pins (define in CubeMX so main.h contains these symbols) */
-#define L_DIR_PORT   L_DIR_GPIO_Port
-#define L_DIR_PIN    L_DIR_Pin
-#define R_DIR_PORT   R_DIR_GPIO_Port
-#define R_DIR_PIN    R_DIR_Pin
 
 typedef enum { MOTOR_FWD = 0, MOTOR_REV = 1 } motor_dir_t;
 
@@ -110,16 +104,31 @@ static void pwm_set_freq_50pct(TIM_HandleTypeDef *htim, uint32_t channel, bool *
     }
 }
 
+// Directions control
 static void motor_set_dir_left(motor_dir_t dir)
 {
-    HAL_GPIO_WritePin(L_DIR_PORT, L_DIR_PIN,
+    HAL_GPIO_WritePin(L_DIR_GPIO_Port, L_DIR_Pin,
                       (dir == MOTOR_REV) ? GPIO_PIN_SET : GPIO_PIN_RESET);
 }
 
 static void motor_set_dir_right(motor_dir_t dir)
 {
-    HAL_GPIO_WritePin(R_DIR_PORT, R_DIR_PIN,
+    HAL_GPIO_WritePin(R_DIR_GPIO_Port, R_DIR_Pin,
                       (dir == MOTOR_REV) ? GPIO_PIN_SET : GPIO_PIN_RESET);
+}
+
+// Electronic brake control
+void Motors_Brake(bool enable)
+{
+  if (enable) {
+    // Active-LOW brake
+    HAL_GPIO_WritePin(L_BRAKE_GPIO_Port, L_BRAKE_Pin, GPIO_PIN_RESET);
+    HAL_GPIO_WritePin(R_BRAKE_GPIO_Port, R_BRAKE_Pin, GPIO_PIN_RESET);
+  } else {
+    // Open-drain
+    HAL_GPIO_WritePin(L_BRAKE_GPIO_Port, L_BRAKE_Pin, GPIO_PIN_SET);
+    HAL_GPIO_WritePin(R_BRAKE_GPIO_Port, R_BRAKE_Pin, GPIO_PIN_SET);
+  }
 }
 
 // Initializes the motor PWM control state: stops TIM2/TIM3 PWM outputs, resets ramp variables, and captures the initial tick time.
@@ -188,5 +197,36 @@ void Motors_Speed_inPercent(float left_pct, float right_pct)
 
     pwm_set_freq_50pct(&LEFT_TIM,  LEFT_CH,  &s_runL, pct_to_freq_hz(s_curL));
     pwm_set_freq_50pct(&RIGHT_TIM, RIGHT_CH, &s_runR, pct_to_freq_hz(s_curR));
+}
+
+// Update motors speed via controls
+void Motors_Control(uint8_t keys_state) {
+	float left  = 0.0f;
+	float right = 0.0f;
+
+	if (g_keys_state & KEY_SPACE) { // brake
+		left  = 0.0f;
+		right = 0.0f;
+		Motors_Speed_inPercent(left, right);
+		Motors_Brake(true);
+	} else {
+		Motors_Brake(false);
+
+		if (g_keys_state & KEY_W) { 		// forward
+			left  = -1.0f;
+			right = 1.0f;
+		} else if (g_keys_state & KEY_S) {  // reverse
+			left  = 1.0f;
+			right = -1.0f;
+		} else if (g_keys_state & KEY_A) {  // turn left
+			left  = 0.5f;
+			right = 0.5f;
+		} else if (g_keys_state & KEY_D) {  // turn right
+			left  = -0.5f;
+			right = -0.5f;
+		}
+	}
+
+	Motors_Speed_inPercent(left, right);
 }
 

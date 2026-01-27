@@ -24,7 +24,7 @@ C_DEPS :=
 SUBDIRS := \
 Core/Src/comm \
 Core/Src \
-Core/Src/imu_mpu6050 \
+Core/Src/gyro \
 Core/Src/motor_control \
 Core/Src/ultrasonic \
 Core/Startup \

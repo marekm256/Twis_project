@@ -8,7 +8,7 @@
 "./Core/Src/system_stm32f3xx.o"
 "./Core/Src/tim.o"
 "./Core/Src/usart.o"
-"./Core/Src/imu_mpu6050/imu_mpu6050.o"
+"./Core/Src/gyro/gyro.o"
 "./Core/Src/motor_control/motor_control.o"
 "./Core/Src/ultrasonic/ultrasonic.o"
 "./Core/Startup/startup_stm32f303k8tx.o"

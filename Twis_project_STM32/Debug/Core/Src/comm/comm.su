@@ -2,4 +2,4 @@
 ../Core/Src/comm/comm.c:19:6:Comm_Init	8	static
 ../Core/Src/comm/comm.c:27:6:Comm_Task	4	static
 ../Core/Src/comm/comm.c:32:6:HAL_UART_RxCpltCallback	24	static
-../Core/Src/comm/comm.c:66:6:HAL_UART_ErrorCallback	16	static
+../Core/Src/comm/comm.c:68:6:HAL_UART_ErrorCallback	16	static
