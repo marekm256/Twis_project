@@ -1,2 +1,0 @@
-../Core/Src/gyro/gyro.c:11:6:IMU_Init	4	static
-../Core/Src/gyro/gyro.c:15:6:IMU_Read	16	static

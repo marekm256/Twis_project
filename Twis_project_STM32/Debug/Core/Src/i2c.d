@@ -1,4 +1,4 @@
-Core/Src/main.o: ../Core/Src/main.c ../Core/Inc/main.h \
+Core/Src/i2c.o: ../Core/Src/i2c.c ../Core/Inc/i2c.h ../Core/Inc/main.h \
  ../Drivers/STM32F3xx_HAL_Driver/Inc/stm32f3xx_hal.h \
  ../Core/Inc/stm32f3xx_hal_conf.h \
  ../Drivers/STM32F3xx_HAL_Driver/Inc/stm32f3xx_hal_rcc.h \
@@ -27,12 +27,8 @@ Core/Src/main.o: ../Core/Src/main.c ../Core/Inc/main.h \
  ../Drivers/STM32F3xx_HAL_Driver/Inc/stm32f3xx_hal_tim.h \
  ../Drivers/STM32F3xx_HAL_Driver/Inc/stm32f3xx_hal_tim_ex.h \
  ../Drivers/STM32F3xx_HAL_Driver/Inc/stm32f3xx_hal_uart.h \
- ../Drivers/STM32F3xx_HAL_Driver/Inc/stm32f3xx_hal_uart_ex.h \
- ../Core/Inc/i2c.h ../Core/Inc/main.h ../Core/Inc/tim.h \
- ../Core/Inc/usart.h ../Core/Inc/gpio.h \
- ../Core/Src/motor_control/motor_control.h ../Core/Src/comm/comm.h \
- ../Core/Src/ultrasonic/ultrasonic.h \
- ../Drivers/CMSIS/Device/ST/STM32F3xx/Include/stm32f303x8.h
+ ../Drivers/STM32F3xx_HAL_Driver/Inc/stm32f3xx_hal_uart_ex.h
+../Core/Inc/i2c.h:
 ../Core/Inc/main.h:
 ../Drivers/STM32F3xx_HAL_Driver/Inc/stm32f3xx_hal.h:
 ../Core/Inc/stm32f3xx_hal_conf.h:
@@ -63,12 +59,3 @@ Core/Src/main.o: ../Core/Src/main.c ../Core/Inc/main.h \
 ../Drivers/STM32F3xx_HAL_Driver/Inc/stm32f3xx_hal_tim_ex.h:
 ../Drivers/STM32F3xx_HAL_Driver/Inc/stm32f3xx_hal_uart.h:
 ../Drivers/STM32F3xx_HAL_Driver/Inc/stm32f3xx_hal_uart_ex.h:
-../Core/Inc/i2c.h:
-../Core/Inc/main.h:
-../Core/Inc/tim.h:
-../Core/Inc/usart.h:
-../Core/Inc/gpio.h:
-../Core/Src/motor_control/motor_control.h:
-../Core/Src/comm/comm.h:
-../Core/Src/ultrasonic/ultrasonic.h:
-../Drivers/CMSIS/Device/ST/STM32F3xx/Include/stm32f303x8.h:
