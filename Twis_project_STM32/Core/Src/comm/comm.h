@@ -17,5 +17,6 @@ extern volatile uint8_t g_keys_state;
 
 void Comm_Init(void);
 void Comm_Task(void);
+void Comm_SendDistance(float dist_m);
 
 #endif
