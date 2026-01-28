@@ -104,34 +104,19 @@ int main(void)
 
   /* Infinite loop */
   /* USER CODE BEGIN WHILE */
-  while (1)
-  {
-	Motors_Control(g_keys_state);
+  uint32_t last_tx = 0;
 
-	// distance = Ultrasonic_ReadDistanceM();
+while (1)
+{
+  Motors_Control(g_keys_state);
+  distance = Ultrasonic_UpdateDistance();
 
-    static uint32_t seed = 123456789u;
-    seed = seed * 1664525u + 1013904223u;
-    float u = (seed >> 8) * (1.0f / 16777216.0f);
-    distance = (u * 20.0f) - 10.0f;
-
-	// posielaj distance 10x za sekundu (100 ms)
-	if (HAL_GetTick() - last_tel_ms >= 100)
-	{
-	  last_tel_ms = HAL_GetTick();
-
-	  char msg[64];
-	  int n = snprintf(msg, sizeof(msg), "dist=%.2f\n", distance);
-
-	  // jednoduchý blocking TX (stačí pri 10Hz)
-	  HAL_UART_Transmit(&huart1, (uint8_t*)msg, (uint16_t)n, 50);
-	}
-
-
-    /* USER CODE END WHILE */
-
-    /* USER CODE BEGIN 3 */
+  uint32_t now = HAL_GetTick();
+  if (now - last_tx >= 100) {   // 10 Hz
+    last_tx = now;
+    Comm_SendDistance(distance);
   }
+}
   /* USER CODE END 3 */
 }
 

@@ -1,5 +1,8 @@
 #include "comm.h"
+#include <string.h>
 
+
+#define MSG_DISTANCE 0xD1
 #define START_BYTE  0xAB
 #define FRAME_LEN   3
 #define TIMEOUT_MS  500
@@ -61,6 +64,29 @@ void HAL_UART_RxCpltCallback(UART_HandleTypeDef *huart)
   }
 
   StartRx();
+}
+
+static uint8_t checksum_xor(const uint8_t *p, uint8_t n)
+{
+  uint8_t c = 0;
+  for (uint8_t i = 0; i < n; i++) c ^= p[i];
+  return c;
+}
+
+void Comm_SendDistance(float dist_m)
+{
+  uint8_t tx[7];
+  tx[0] = START_BYTE;
+  tx[1] = MSG_DISTANCE;
+
+  // skopíruj float do bajtov (IEEE754)
+  memcpy(&tx[2], &dist_m, sizeof(float));
+
+  // checksum z bajtov [1..5] (typ + float)
+  tx[6] = checksum_xor(&tx[1], 1 + 4);
+
+  // blokujúco, na testovanie je to najjednoduchšie
+  HAL_UART_Transmit(&huart1, tx, sizeof(tx), 50);
 }
 
 void HAL_UART_ErrorCallback(UART_HandleTypeDef *huart)
