@@ -100,16 +100,19 @@ int main(void)
 
   /* Infinite loop */
   /* USER CODE BEGIN WHILE */
-  while (1)
-  {
-	Motors_Control(g_keys_state);
+  uint32_t last_tx = 0;
 
-	distance = Ultrasonic_UpdateDistance();
+while (1)
+{
+  Motors_Control(g_keys_state);
+  distance = Ultrasonic_UpdateDistance();
 
-    /* USER CODE END WHILE */
-
-    /* USER CODE BEGIN 3 */
+  uint32_t now = HAL_GetTick();
+  if (now - last_tx >= 100) {   // 10 Hz
+    last_tx = now;
+    Comm_SendDistance(distance);
   }
+}
   /* USER CODE END 3 */
 }
 
