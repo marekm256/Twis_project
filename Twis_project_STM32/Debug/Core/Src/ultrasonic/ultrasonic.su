@@ -1,5 +1,4 @@
-../Core/Src/ultrasonic/ultrasonic.c:29:13:tim1_init_1us	4	static
-../Core/Src/ultrasonic/ultrasonic.c:38:13:delay_us	16	static
-../Core/Src/ultrasonic/ultrasonic.c:47:16:wait_echo_state	16	static
-../Core/Src/ultrasonic/ultrasonic.c:64:6:Ultrasonic_Init	8	static
-../Core/Src/ultrasonic/ultrasonic.c:83:7:Ultrasonic_UpdateDistance	16	static
+../Core/Src/ultrasonic/ultrasonic.c:20:13:delay_us	16	static
+../Core/Src/ultrasonic/ultrasonic.c:27:12:wait_echo_state	16	static
+../Core/Src/ultrasonic/ultrasonic.c:37:6:Ultrasonic_Init	16	static
+../Core/Src/ultrasonic/ultrasonic.c:44:7:Ultrasonic_ReadDistanceM	16	static

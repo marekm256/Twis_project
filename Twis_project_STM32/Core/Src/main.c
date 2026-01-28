@@ -18,6 +18,8 @@
 #include "motor_control.h"
 #include "comm.h"
 #include "ultrasonic.h"
+#include <stdio.h>
+#include <string.h>
 /* USER CODE END Includes */
 
 /* Private typedef -----------------------------------------------------------*/
@@ -39,7 +41,8 @@
 
 /* USER CODE BEGIN PV */
 
-float distance = 0.0;
+float distance = 0.0f;
+uint32_t last_tel_ms = 0;
 
 /* USER CODE END PV */
 
@@ -94,7 +97,8 @@ int main(void)
 
   Motors_Init();
 
-  Ultrasonic_Init();
+  Ultrasonic_Init(&htim1);
+  last_tel_ms = HAL_GetTick();
 
   /* USER CODE END 2 */
 
@@ -104,7 +108,25 @@ int main(void)
   {
 	Motors_Control(g_keys_state);
 
-	distance = Ultrasonic_UpdateDistance();
+	// distance = Ultrasonic_ReadDistanceM();
+
+    static uint32_t seed = 123456789u;
+    seed = seed * 1664525u + 1013904223u;
+    float u = (seed >> 8) * (1.0f / 16777216.0f);
+    distance = (u * 20.0f) - 10.0f;
+
+	// posielaj distance 10x za sekundu (100 ms)
+	if (HAL_GetTick() - last_tel_ms >= 100)
+	{
+	  last_tel_ms = HAL_GetTick();
+
+	  char msg[64];
+	  int n = snprintf(msg, sizeof(msg), "dist=%.2f\n", distance);
+
+	  // jednoduchý blocking TX (stačí pri 10Hz)
+	  HAL_UART_Transmit(&huart1, (uint8_t*)msg, (uint16_t)n, 50);
+	}
+
 
     /* USER CODE END WHILE */
 
@@ -126,14 +148,12 @@ void SystemClock_Config(void)
   /** Initializes the RCC Oscillators according to the specified parameters
   * in the RCC_OscInitTypeDef structure.
   */
-  RCC_OscInitStruct.OscillatorType = RCC_OSCILLATORTYPE_HSI|RCC_OSCILLATORTYPE_HSE;
-  RCC_OscInitStruct.HSEState = RCC_HSE_ON;
-  RCC_OscInitStruct.HSEPredivValue = RCC_HSE_PREDIV_DIV1;
+  RCC_OscInitStruct.OscillatorType = RCC_OSCILLATORTYPE_HSI;
   RCC_OscInitStruct.HSIState = RCC_HSI_ON;
   RCC_OscInitStruct.HSICalibrationValue = RCC_HSICALIBRATION_DEFAULT;
   RCC_OscInitStruct.PLL.PLLState = RCC_PLL_ON;
-  RCC_OscInitStruct.PLL.PLLSource = RCC_PLLSOURCE_HSE;
-  RCC_OscInitStruct.PLL.PLLMUL = RCC_PLL_MUL9;
+  RCC_OscInitStruct.PLL.PLLSource = RCC_PLLSOURCE_HSI;
+  RCC_OscInitStruct.PLL.PLLMUL = RCC_PLL_MUL4;
   if (HAL_RCC_OscConfig(&RCC_OscInitStruct) != HAL_OK)
   {
     Error_Handler();
@@ -144,11 +164,11 @@ void SystemClock_Config(void)
   RCC_ClkInitStruct.ClockType = RCC_CLOCKTYPE_HCLK|RCC_CLOCKTYPE_SYSCLK
                               |RCC_CLOCKTYPE_PCLK1|RCC_CLOCKTYPE_PCLK2;
   RCC_ClkInitStruct.SYSCLKSource = RCC_SYSCLKSOURCE_PLLCLK;
-  RCC_ClkInitStruct.AHBCLKDivider = RCC_SYSCLK_DIV1;
+  RCC_ClkInitStruct.AHBCLKDivider = RCC_SYSCLK_DIV2;
   RCC_ClkInitStruct.APB1CLKDivider = RCC_HCLK_DIV2;
   RCC_ClkInitStruct.APB2CLKDivider = RCC_HCLK_DIV1;
 
-  if (HAL_RCC_ClockConfig(&RCC_ClkInitStruct, FLASH_LATENCY_2) != HAL_OK)
+  if (HAL_RCC_ClockConfig(&RCC_ClkInitStruct, FLASH_LATENCY_0) != HAL_OK)
   {
     Error_Handler();
   }

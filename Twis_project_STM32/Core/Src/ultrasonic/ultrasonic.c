@@ -6,106 +6,61 @@
  */
 
 // ultrasonic.c
-#include "ultrasonic.h"
+ #include "ultrasonic.h"
 
-/*
-  HC-SR04 zapojenie:
-    TRIG -> PB3
-    ECHO -> PB4   (cez delič 5V -> 3.3V)
-*/
+// piny
+#define TRIG_PORT GPIOB
+#define TRIG_PIN  GPIO_PIN_5   // PB5
 
-float distance_m = 0.0f;
+#define ECHO_PORT GPIOB
+#define ECHO_PIN  GPIO_PIN_4   // PB4
 
-/* piny */
-#define TRIG_PIN        3U   /* PB3 */
-#define ECHO_PIN        4U   /* PB4 */
-
-#define TRIG_MASK       (1U << TRIG_PIN)
-#define ECHO_MASK       (1U << ECHO_PIN)
-
-#define ECHO_TIMEOUT_US 30000U   /* 30 ms */
-
-/* ---------- TIM1: 1 µs tick ---------- */
-static void tim1_init_1us(void)
-{
-    RCC->APB2ENR |= RCC_APB2ENR_TIM1EN;
-    TIM1->PSC = 71;          /* 72 MHz / (71+1) = 1 MHz */
-    TIM1->ARR = 0xFFFF;
-    TIM1->CNT = 0;
-    TIM1->CR1 |= TIM_CR1_CEN;
-}
+static TIM_HandleTypeDef *u_htim = NULL;
 
 static void delay_us(uint16_t us)
 {
-    TIM1->CNT = 0;
-    while (TIM1->CNT < us) { }
+  __HAL_TIM_SET_COUNTER(u_htim, 0);
+  while (__HAL_TIM_GET_COUNTER(u_htim) < us) { }
 }
 
-/* wait for ECHO HIGH/LOW with timeout
-   return 1 = timeout, 0 = OK
-*/
-static uint8_t wait_echo_state(uint8_t want_high, uint32_t timeout_us)
+// wait na ECHO stav s timeoutom v us; return 1=timeout, 0=ok
+static int wait_echo_state(GPIO_PinState state, uint32_t timeout_us)
 {
-    TIM1->CNT = 0;
-
-    if (want_high) {
-        while ((GPIOB->IDR & ECHO_MASK) == 0U) {
-            if (TIM1->CNT > timeout_us) return 1;
-        }
-    } else {
-        while ((GPIOB->IDR & ECHO_MASK) != 0U) {
-            if (TIM1->CNT > timeout_us) return 1;
-        }
-    }
-    return 0;
+  __HAL_TIM_SET_COUNTER(u_htim, 0);
+  while (HAL_GPIO_ReadPin(ECHO_PORT, ECHO_PIN) != state)
+  {
+    if (__HAL_TIM_GET_COUNTER(u_htim) > timeout_us) return 1;
+  }
+  return 0;
 }
 
-/* ---------- INIT ---------- */
-void Ultrasonic_Init(void)
+void Ultrasonic_Init(TIM_HandleTypeDef *htim)
 {
-    /* GPIOB clock */
-    RCC->AHBENR |= RCC_AHBENR_GPIOBEN;
-
-    /* PB3 = TRIG (output) */
-    GPIOB->MODER &= ~(3U << (TRIG_PIN * 2U));
-    GPIOB->MODER |=  (1U << (TRIG_PIN * 2U));
-
-    /* PB4 = ECHO (input) */
-    GPIOB->MODER &= ~(3U << (ECHO_PIN * 2U));
-
-    /* TRIG low */
-    GPIOB->ODR &= ~TRIG_MASK;
-
-    tim1_init_1us();
+  u_htim = htim;
+  HAL_TIM_Base_Start(u_htim);   // TIM1 musí bežať
+  HAL_GPIO_WritePin(TRIG_PORT, TRIG_PIN, GPIO_PIN_RESET);
 }
 
-/* ---------- MERANIE ---------- */
-float Ultrasonic_UpdateDistance(void)
+float Ultrasonic_ReadDistanceM(void)
 {
-    uint32_t time_us;
+  uint32_t t_us;
 
-    /* TRIG pulse 10 us */
-    GPIOB->ODR &= ~TRIG_MASK;
-    delay_us(2);
-    GPIOB->ODR |=  TRIG_MASK;
-    delay_us(10);
-    GPIOB->ODR &= ~TRIG_MASK;
+  // TRIG 10 us
+  HAL_GPIO_WritePin(TRIG_PORT, TRIG_PIN, GPIO_PIN_RESET);
+  delay_us(2);
+  HAL_GPIO_WritePin(TRIG_PORT, TRIG_PIN, GPIO_PIN_SET);
+  delay_us(10);
+  HAL_GPIO_WritePin(TRIG_PORT, TRIG_PIN, GPIO_PIN_RESET);
 
-    /* wait ECHO HIGH */
-    if (wait_echo_state(1, ECHO_TIMEOUT_US)) {
-        distance_m = -1.0f;
-        return 0.0f;
-    }
+  // čakaj na ECHO HIGH (timeout 30ms)
+  if (wait_echo_state(GPIO_PIN_SET, 30000)) return -1.0f;
 
-    /* measure HIGH width */
-    TIM1->CNT = 0;
-    if (wait_echo_state(0, ECHO_TIMEOUT_US)) {
-        distance_m = -1.0f;
-        return 0.0f;
-    }
+  // meraj HIGH šírku (timeout 30ms)
+  __HAL_TIM_SET_COUNTER(u_htim, 0);
+  if (wait_echo_state(GPIO_PIN_RESET, 30000)) return -1.0f;
 
-    time_us = TIM1->CNT;
+  t_us = __HAL_TIM_GET_COUNTER(u_htim);
 
-    /* prepočet na metre: m ≈ us / 5800 */
-    return (float)time_us / 5800.0f;
+  // m ≈ us / 5800
+  return (float)t_us / 5800.0f;
 }

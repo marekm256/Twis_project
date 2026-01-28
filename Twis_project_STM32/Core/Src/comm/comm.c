@@ -51,13 +51,11 @@ void HAL_UART_RxCpltCallback(UART_HandleTypeDef *huart)
         g_keys_state = state;
         last_rx_ms = HAL_GetTick();
 
-        /* Uncomment for debugging communication
         if (g_keys_state) {
 			HAL_GPIO_WritePin(GPIOB, GPIO_PIN_3, GPIO_PIN_SET);
 		} else {
 			HAL_GPIO_WritePin(GPIOB, GPIO_PIN_3, GPIO_PIN_RESET);
 		}
-		*/
       }
     }
   }

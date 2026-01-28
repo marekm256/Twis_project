@@ -8,14 +8,13 @@
 #ifndef SRC_ULTRASONIC_ULTRASONIC_H_
 #define SRC_ULTRASONIC_ULTRASONIC_H_
 
-#include "stm32f303x8.h"
-#include <stdint.h>
+#include "main.h"   // má stm32f3xx_hal.h
 
-/* vÃ½sledok merania v metroch */
-extern float distance_m;
+// init (spusti TIM1)
+void Ultrasonic_Init(TIM_HandleTypeDef *htim);
 
-/* PB3 = TRIG, PB4 = ECHO */
-void Ultrasonic_Init(void);
-float Ultrasonic_UpdateDistance(void);
+// vzdialenosť v metroch; pri chybe/timeout vráti -1.0f
+float Ultrasonic_ReadDistanceM(void);
+
 
 #endif /* SRC_ULTRASONIC_ULTRASONIC_H_ */
