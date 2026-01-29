@@ -110,6 +110,8 @@ int main(void)
   /* Infinite loop */
   /* USER CODE BEGIN WHILE */
 
+	float fake_temp = 25.0f;   
+
 
   while (1)
   {
@@ -120,7 +122,17 @@ int main(void)
 	  last_tx = now;
 
 	  IMU_ReadData(&imu);
-	  Comm_SendDistance(imu.roll_deg);
+	  float dist_cm = Ultrasonic_ReadDistanceCM();
+
+		float v[8] = {
+		  imu.ax_g, imu.ay_g, imu.az_g,
+		  imu.gx_dps, imu.gy_dps, imu.gz_dps,
+		  fake_temp,
+		  dist_cm
+		};
+		
+		Comm_SendTelem8(v);
+
 
 	  //float d_cm = Ultrasonic_ReadDistanceCM();
 	  //Comm_SendDistance(d_cm);
