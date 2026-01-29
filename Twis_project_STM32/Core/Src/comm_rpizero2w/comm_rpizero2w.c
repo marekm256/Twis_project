@@ -7,6 +7,7 @@
 #define START_BYTE  0xAB
 #define FRAME_LEN   3
 #define TIMEOUT_MS  500
+#define MSG_TELEM 0xD2
 
 volatile uint8_t g_keys_state = 0;
 
@@ -19,6 +20,8 @@ static void StartRx(void)
 {
   (void)HAL_UART_Receive_IT(&huart1, &rx_byte, 1);
 }
+
+static uint8_t checksum_xor(const uint8_t *p, uint8_t n);
 
 void Comm_Init(void)
 {
@@ -87,6 +90,21 @@ void Comm_SendDistance(float dist_m)
   tx[6] = checksum_xor(&tx[1], 1 + 4);
 
   // blokujúco, na testovanie je to najjednoduchšie
+  HAL_UART_Transmit(&huart1, tx, sizeof(tx), 50);
+}
+
+void Comm_SendTelem8(const float v[8])
+{
+  uint8_t tx[1 + 1 + 1 + 32 + 1]; // START + TYPE + LEN + payload + CHK
+  tx[0] = START_BYTE;
+  tx[1] = MSG_TELEM;
+  tx[2] = 32; // 8 floats
+
+  memcpy(&tx[3], v, 32);
+
+  // CHK z [TYPE, LEN, PAYLOAD]
+  tx[3 + 32] = checksum_xor(&tx[1], 1 + 1 + 32);
+
   HAL_UART_Transmit(&huart1, tx, sizeof(tx), 50);
 }
 
