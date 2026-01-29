@@ -30,8 +30,10 @@ Core/Src/main.o: ../Core/Src/main.c ../Core/Inc/main.h \
  ../Drivers/STM32F3xx_HAL_Driver/Inc/stm32f3xx_hal_uart_ex.h \
  ../Core/Inc/i2c.h ../Core/Inc/main.h ../Core/Inc/tim.h \
  ../Core/Inc/usart.h ../Core/Inc/gpio.h \
- ../Core/Src/motor_control/motor_control.h ../Core/Src/comm/comm.h \
- ../Core/Src/ultrasonic/ultrasonic.h
+ ../Core/Src/comm_rpizero2w/comm_rpizero2w.h \
+ ../Core/Src/imu_mpu6500/imu_mpu6500.h \
+ ../Core/Src/motors_24h055m020/motors_24h055m020.h \
+ ../Core/Src/ultrasonic_hcsr04/ultrasonic_hcsr04.h
 ../Core/Inc/main.h:
 ../Drivers/STM32F3xx_HAL_Driver/Inc/stm32f3xx_hal.h:
 ../Core/Inc/stm32f3xx_hal_conf.h:
@@ -67,6 +69,7 @@ Core/Src/main.o: ../Core/Src/main.c ../Core/Inc/main.h \
 ../Core/Inc/tim.h:
 ../Core/Inc/usart.h:
 ../Core/Inc/gpio.h:
-../Core/Src/motor_control/motor_control.h:
-../Core/Src/comm/comm.h:
-../Core/Src/ultrasonic/ultrasonic.h:
+../Core/Src/comm_rpizero2w/comm_rpizero2w.h:
+../Core/Src/imu_mpu6500/imu_mpu6500.h:
+../Core/Src/motors_24h055m020/motors_24h055m020.h:
+../Core/Src/ultrasonic_hcsr04/ultrasonic_hcsr04.h:

@@ -15,11 +15,15 @@
 
 /* Private includes ----------------------------------------------------------*/
 /* USER CODE BEGIN Includes */
-#include "motor_control.h"
-#include "comm.h"
-#include "ultrasonic.h"
+
 #include <stdio.h>
 #include <string.h>
+
+#include "comm_rpizero2w.h"
+#include "imu_mpu6500.h"
+#include "motors_24h055m020.h"
+#include "ultrasonic_hcsr04.h"
+
 /* USER CODE END Includes */
 
 /* Private typedef -----------------------------------------------------------*/
@@ -40,9 +44,6 @@
 /* Private variables ---------------------------------------------------------*/
 
 /* USER CODE BEGIN PV */
-
-float distance = 0.0f;
-uint32_t last_tel_ms = 0;
 
 /* USER CODE END PV */
 
@@ -89,34 +90,43 @@ int main(void)
   MX_TIM3_Init();
   MX_USART1_UART_Init();
   MX_TIM2_Init();
-  MX_I2C1_Init();
   MX_TIM1_Init();
+  MX_I2C1_Init();
   /* USER CODE BEGIN 2 */
 
   Comm_Init();
+  uint32_t last_tx = 0;
+
 
   Motors_Init();
 
-  Ultrasonic_Init(&htim1);
-  last_tel_ms = HAL_GetTick();
+  //Ultrasonic_Init(&htim1);
+  //last_tel_ms = HAL_GetTick();
+
+  IMU_Init();
 
   /* USER CODE END 2 */
 
   /* Infinite loop */
   /* USER CODE BEGIN WHILE */
-  uint32_t last_tx = 0;
 
-while (1)
-{
-  Motors_Control(g_keys_state);
-  distance = Ultrasonic_UpdateDistance();
 
-  uint32_t now = HAL_GetTick();
-  if (now - last_tx >= 100) {   // 10 Hz
-    last_tx = now;
-    Comm_SendDistance(distance);
+  while (1)
+  {
+	Motors_Control(g_keys_state);
+	//distance = Ultrasonic_ReadDistanceM();
+
+	float ok = IMU_Update();
+
+	uint32_t now = HAL_GetTick();
+	if (now - last_tx >= 100) {   // 10 Hz
+	  last_tx = now;
+	  Comm_SendDistance(ok);
+	}
+    /* USER CODE END WHILE */
+
+    /* USER CODE BEGIN 3 */
   }
-}
   /* USER CODE END 3 */
 }
 

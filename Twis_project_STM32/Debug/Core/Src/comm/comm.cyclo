@@ -1,5 +1,0 @@
-../Core/Src/comm/comm.c:14:13:StartRx	1
-../Core/Src/comm/comm.c:19:6:Comm_Init	1
-../Core/Src/comm/comm.c:27:6:Comm_Task	1
-../Core/Src/comm/comm.c:32:6:HAL_UART_RxCpltCallback	7
-../Core/Src/comm/comm.c:66:6:HAL_UART_ErrorCallback	2

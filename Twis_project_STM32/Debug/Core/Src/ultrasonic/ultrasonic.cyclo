@@ -1,4 +1,0 @@
-../Core/Src/ultrasonic/ultrasonic.c:20:13:delay_us	2
-../Core/Src/ultrasonic/ultrasonic.c:27:12:wait_echo_state	3
-../Core/Src/ultrasonic/ultrasonic.c:37:6:Ultrasonic_Init	1
-../Core/Src/ultrasonic/ultrasonic.c:44:7:Ultrasonic_ReadDistanceM	3

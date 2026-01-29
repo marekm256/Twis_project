@@ -11,10 +11,10 @@ RM := rm -rf
 -include sources.mk
 -include Drivers/STM32F3xx_HAL_Driver/Src/subdir.mk
 -include Core/Startup/subdir.mk
--include Core/Src/ultrasonic/subdir.mk
--include Core/Src/motor_control/subdir.mk
--include Core/Src/gyro/subdir.mk
--include Core/Src/comm/subdir.mk
+-include Core/Src/ultrasonic_hcsr04/subdir.mk
+-include Core/Src/motors_24h055m020/subdir.mk
+-include Core/Src/imu_mpu6500/subdir.mk
+-include Core/Src/comm_rpizero2w/subdir.mk
 -include Core/Src/subdir.mk
 -include objects.mk
 

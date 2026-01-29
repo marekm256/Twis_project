@@ -44,10 +44,10 @@
 								</option>
 								<option IS_BUILTIN_EMPTY="false" IS_VALUE_EMPTY="false" id="com.st.stm32cube.ide.mcu.gnu.managedbuild.tool.c.compiler.option.includepaths.1899551548" name="Include paths (-I)" superClass="com.st.stm32cube.ide.mcu.gnu.managedbuild.tool.c.compiler.option.includepaths" useByScannerDiscovery="false" valueType="includePath">
 									<listOptionValue builtIn="false" value="../Core/Inc"/>
-									<listOptionValue builtIn="false" value="../Core/Src/comm"/>
-									<listOptionValue builtIn="false" value="../Core/Src/motor_control"/>
-									<listOptionValue builtIn="false" value="../Core/Src/ultrasonic"/>
-									<listOptionValue builtIn="false" value="../Core/Src/gyro"/>
+									<listOptionValue builtIn="false" value="../Core/Src/comm_rpizero2w"/>
+									<listOptionValue builtIn="false" value="../Core/Src/motors_24h055m020"/>
+									<listOptionValue builtIn="false" value="../Core/Src/ultrasonic_hcsr04"/>
+									<listOptionValue builtIn="false" value="../Core/Src/imu_mpu6500"/>
 									<listOptionValue builtIn="false" value="../Drivers/STM32F3xx_HAL_Driver/Inc/Legacy"/>
 									<listOptionValue builtIn="false" value="../Drivers/STM32F3xx_HAL_Driver/Inc"/>
 									<listOptionValue builtIn="false" value="../Drivers/CMSIS/Device/ST/STM32F3xx/Include"/>
@@ -177,5 +177,12 @@
 			<autodiscovery enabled="false" problemReportingEnabled="true" selectedProfileId=""/>
 		</scannerConfigBuildInfo>
 	</storageModule>
-	<storageModule moduleId="refreshScope"/>
+	<storageModule moduleId="refreshScope" versionNumber="2">
+		<configuration configurationName="Debug">
+			<resource resourceType="PROJECT" workspacePath="/Twis_project"/>
+		</configuration>
+		<configuration configurationName="Release">
+			<resource resourceType="PROJECT" workspacePath="/Twis_project"/>
+		</configuration>
+	</storageModule>
 </cproject>

@@ -22,11 +22,11 @@ C_DEPS :=
 
 # Every subdirectory with source files must be described here
 SUBDIRS := \
-Core/Src/comm \
+Core/Src/comm_rpizero2w \
 Core/Src \
-Core/Src/gyro \
-Core/Src/motor_control \
-Core/Src/ultrasonic \
+Core/Src/imu_mpu6500 \
+Core/Src/motors_24h055m020 \
+Core/Src/ultrasonic_hcsr04 \
 Core/Startup \
 Drivers/STM32F3xx_HAL_Driver/Src \
 

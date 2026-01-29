@@ -1,5 +1,5 @@
 Core/Src/ultrasonic/ultrasonic.o: ../Core/Src/ultrasonic/ultrasonic.c \
- ../Core/Src/ultrasonic/ultrasonic.h ../Core/Inc/main.h \
+ ../Core/Src/ultrasonic/ultrasonic.h \
  ../Drivers/STM32F3xx_HAL_Driver/Inc/stm32f3xx_hal.h \
  ../Core/Inc/stm32f3xx_hal_conf.h \
  ../Drivers/STM32F3xx_HAL_Driver/Inc/stm32f3xx_hal_rcc.h \
@@ -30,7 +30,6 @@ Core/Src/ultrasonic/ultrasonic.o: ../Core/Src/ultrasonic/ultrasonic.c \
  ../Drivers/STM32F3xx_HAL_Driver/Inc/stm32f3xx_hal_uart.h \
  ../Drivers/STM32F3xx_HAL_Driver/Inc/stm32f3xx_hal_uart_ex.h
 ../Core/Src/ultrasonic/ultrasonic.h:
-../Core/Inc/main.h:
 ../Drivers/STM32F3xx_HAL_Driver/Inc/stm32f3xx_hal.h:
 ../Core/Inc/stm32f3xx_hal_conf.h:
 ../Drivers/STM32F3xx_HAL_Driver/Inc/stm32f3xx_hal_rcc.h:

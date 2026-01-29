@@ -1,0 +1,10 @@
+../Core/Src/motors_24h055m020/motors_24h055m020.c:39:17:tim_apb1_clk_hz	40	static
+../Core/Src/motors_24h055m020/motors_24h055m020.c:50:13:compute_psc_arr	40	static
+../Core/Src/motors_24h055m020/motors_24h055m020.c:72:17:pct_to_freq_hz	24	static
+../Core/Src/motors_24h055m020/motors_24h055m020.c:83:13:pwm_set_freq_50pct	32	static
+../Core/Src/motors_24h055m020/motors_24h055m020.c:110:13:motor_set_dir_left	16	static
+../Core/Src/motors_24h055m020/motors_24h055m020.c:116:13:motor_set_dir_right	16	static
+../Core/Src/motors_24h055m020/motors_24h055m020.c:123:6:Motors_Brake	16	static
+../Core/Src/motors_24h055m020/motors_24h055m020.c:137:6:Motors_Init	8	static
+../Core/Src/motors_24h055m020/motors_24h055m020.c:155:6:Motors_Speed_inPercent	40	static
+../Core/Src/motors_24h055m020/motors_24h055m020.c:205:6:Motors_Control	24	static
