@@ -100,10 +100,10 @@ int main(void)
 
   Motors_Init();
 
-  //Ultrasonic_Init(&htim1);
-  //last_tel_ms = HAL_GetTick();
+  Ultrasonic_Init(&htim1);
 
   IMU_Init();
+  IMU_Data imu;
 
   /* USER CODE END 2 */
 
@@ -114,14 +114,16 @@ int main(void)
   while (1)
   {
 	Motors_Control(g_keys_state);
-	//distance = Ultrasonic_ReadDistanceM();
-
-	float ok = IMU_Update();
 
 	uint32_t now = HAL_GetTick();
 	if (now - last_tx >= 100) {   // 10 Hz
 	  last_tx = now;
-	  Comm_SendDistance(ok);
+
+	  IMU_ReadData(&imu);
+	  Comm_SendDistance(imu.roll_deg);
+
+	  //float d_cm = Ultrasonic_ReadDistanceCM();
+	  //Comm_SendDistance(d_cm);
 	}
     /* USER CODE END WHILE */
 
