@@ -1,11 +1,10 @@
 /*
- * imu_mpu6050.c
+ * imu_mpu6500.c
  *
  *  Created on: Nov 25, 2025
  *      Author: malin
  */
 
-// imu_mpu6050.c
 #include "imu_mpu6500.h"
 #include "i2c.h"
 #include "stm32f3xx_hal.h"
@@ -92,7 +91,8 @@ static bool whoami_ok(uint8_t w)
 
 /* Read burst raw (internal helper used for calibration too) */
 static HAL_StatusTypeDef imu_read_raw_burst(int16_t* ax, int16_t* ay, int16_t* az,
-                                           int16_t* gx, int16_t* gy, int16_t* gz)
+                                           int16_t* gx, int16_t* gy, int16_t* gz,
+                                           int16_t* temp)
 {
   uint8_t b[14];
   HAL_StatusTypeDef st = imu_read_bytes(REG_ACCEL_XOUT_H, b, sizeof(b));
@@ -101,6 +101,8 @@ static HAL_StatusTypeDef imu_read_raw_burst(int16_t* ax, int16_t* ay, int16_t* a
   *ax = (int16_t)((b[0] << 8) | b[1]);
   *ay = (int16_t)((b[2] << 8) | b[3]);
   *az = (int16_t)((b[4] << 8) | b[5]);
+
+  *temp = (int16_t)((b[6] << 8) | b[7]); // TEMP_OUT
 
   *gx = (int16_t)((b[8]  << 8) | b[9]);
   *gy = (int16_t)((b[10] << 8) | b[11]);
@@ -113,7 +115,7 @@ void IMU_Init(void)
 {
   s_inited = false;
 
-  // Wake up (clear SLEEP) - môžeš neskôr prejsť na 0x01 (PLL), ale nechávam tvoj štýl
+  // Wake up (clear SLEEP)
   (void)imu_write_u8(REG_PWR_MGMT_1, 0x00u);
   HAL_Delay(10);
 
@@ -139,13 +141,13 @@ void IMU_Init(void)
   s_gy_bias = 0.0f;
   s_gz_bias = 0.0f;
 
-  const int N = 200;           // ~200 samples
+  const int N = 200;                 // ~200 samples
   const uint32_t sample_delay_ms = 5; // ~1s total
   int good = 0;
 
   for (int i = 0; i < N; i++) {
-    int16_t ax, ay, az, gx, gy, gz;
-    if (imu_read_raw_burst(&ax, &ay, &az, &gx, &gy, &gz) == HAL_OK) {
+    int16_t ax, ay, az, gx, gy, gz, temp;
+    if (imu_read_raw_burst(&ax, &ay, &az, &gx, &gy, &gz, &temp) == HAL_OK) {
       s_gx_bias += (float)gx / s_gyro_lsb_per_dps;
       s_gy_bias += (float)gy / s_gyro_lsb_per_dps;
       s_gz_bias += (float)gz / s_gyro_lsb_per_dps;
@@ -162,8 +164,8 @@ void IMU_Init(void)
 
   // ===== Initialize roll/pitch using accelerometer angle (no jump at start) =====
   {
-    int16_t ax, ay, az, gx, gy, gz;
-    if (imu_read_raw_burst(&ax, &ay, &az, &gx, &gy, &gz) == HAL_OK) {
+    int16_t ax, ay, az, gx, gy, gz, temp;
+    if (imu_read_raw_burst(&ax, &ay, &az, &gx, &gy, &gz, &temp) == HAL_OK) {
       float ax_g = (float)ax / s_accel_lsb_per_g;
       float ay_g = (float)ay / s_accel_lsb_per_g;
       float az_g = (float)az / s_accel_lsb_per_g;
@@ -202,12 +204,13 @@ HAL_StatusTypeDef IMU_ReadRaw(IMU_Raw *out)
 
   if (IMU_Update() < 0.5f) return HAL_ERROR;
 
-  int16_t ax, ay, az, gx, gy, gz;
-  HAL_StatusTypeDef st = imu_read_raw_burst(&ax, &ay, &az, &gx, &gy, &gz);
+  int16_t ax, ay, az, gx, gy, gz, temp;
+  HAL_StatusTypeDef st = imu_read_raw_burst(&ax, &ay, &az, &gx, &gy, &gz, &temp);
   if (st != HAL_OK) return st;
 
   out->ax = ax; out->ay = ay; out->az = az;
   out->gx = gx; out->gy = gy; out->gz = gz;
+  out->temp = temp;
 
   return HAL_OK;
 }
@@ -228,6 +231,9 @@ HAL_StatusTypeDef IMU_ReadData(IMU_Data *out)
   out->gx_dps = ((float)r.gx / s_gyro_lsb_per_dps) - s_gx_bias;
   out->gy_dps = ((float)r.gy / s_gyro_lsb_per_dps) - s_gy_bias;
   out->gz_dps = ((float)r.gz / s_gyro_lsb_per_dps) - s_gz_bias;
+
+  // temperature (°C)
+  out->temp_c = ((float)r.temp) / 333.87f + 21.0f;
 
   // --- dt (seconds) ---
   uint32_t now = HAL_GetTick();

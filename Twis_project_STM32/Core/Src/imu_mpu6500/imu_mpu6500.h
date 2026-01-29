@@ -27,11 +27,13 @@ float IMU_Update(void);
 typedef struct {
   int16_t ax, ay, az;
   int16_t gx, gy, gz;
+  int16_t temp;
 } IMU_Raw;
 
 typedef struct {
   float ax_g, ay_g, az_g;
   float gx_dps, gy_dps, gz_dps;
+  float temp_c;
   float roll_deg, pitch_deg;
 } IMU_Data;
 

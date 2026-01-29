@@ -120,10 +120,10 @@ int main(void)
 	  last_tx = now;
 
 	  IMU_ReadData(&imu);
-	  Comm_SendDistance(imu.roll_deg);
 
 	  //float d_cm = Ultrasonic_ReadDistanceCM();
-	  //Comm_SendDistance(d_cm);
+
+	  Comm_SendDistance(imu.temp_c);
 	}
     /* USER CODE END WHILE */
 
