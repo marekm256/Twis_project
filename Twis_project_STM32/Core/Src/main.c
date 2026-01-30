@@ -110,9 +110,6 @@ int main(void)
   /* Infinite loop */
   /* USER CODE BEGIN WHILE */
 
-	float fake_temp = 25.0f;   
-
-
   while (1)
   {
 	Motors_Control(g_keys_state);
@@ -127,16 +124,11 @@ int main(void)
 		float v[8] = {
 		  imu.ax_g, imu.ay_g, imu.az_g,
 		  imu.gx_dps, imu.gy_dps, imu.gz_dps,
-		  fake_temp,
+		  imu.temp_c,
 		  dist_cm
 		};
 		
 		Comm_SendTelem8(v);
-
-
-	  //float d_cm = Ultrasonic_ReadDistanceCM();
-
-	  Comm_SendDistance(imu.temp_c);
 	}
     /* USER CODE END WHILE */
 
