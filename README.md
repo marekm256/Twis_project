@@ -54,15 +54,23 @@ Projekt je STM32CubeIDE projekt. Vlastné moduly sú v `Src/`:
    ```bash
    git clone https://github.com/marekm256/Twis_project.git
    cd Twis_project
+
    git checkout -b feature/motor_control
    git checkout -b feature/comm       - vytvorenie vlastnej vetvy
    git checkout -b feature/imu
    git checkout -b feature/ultrasonic
 
 2. Po vykonaní zmien:
+    ```bash
     git add .
     git commit -m "Popis zmeny"
+
+    prvý krát:
+    git push --set-upstream origin feature/motor_control
+
+    každý další krát:
     git push origin feature/motor_control
 
+3. Následna sa priamo na stránke dá spojiť vytvorená vetva s hlavným kodom po dohode s Team leadrom.
 
 
