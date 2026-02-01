@@ -4,7 +4,7 @@
 ../Core/Src/motors_24h055m020/motors_24h055m020.c:83:13:pwm_set_freq_50pct	9
 ../Core/Src/motors_24h055m020/motors_24h055m020.c:110:13:motor_set_dir_left	1
 ../Core/Src/motors_24h055m020/motors_24h055m020.c:116:13:motor_set_dir_right	1
-../Core/Src/motors_24h055m020/motors_24h055m020.c:123:6:Motors_Brake	2
-../Core/Src/motors_24h055m020/motors_24h055m020.c:137:6:Motors_Init	1
-../Core/Src/motors_24h055m020/motors_24h055m020.c:155:6:Motors_Speed_inPercent	23
-../Core/Src/motors_24h055m020/motors_24h055m020.c:205:6:Motors_Control	6
+../Core/Src/motors_24h055m020/motors_24h055m020.c:123:6:Motors_SetEnable	1
+../Core/Src/motors_24h055m020/motors_24h055m020.c:132:6:Motors_Init	1
+../Core/Src/motors_24h055m020/motors_24h055m020.c:152:6:Motors_Speed_inPercent	23
+../Core/Src/motors_24h055m020/motors_24h055m020.c:202:6:Motors_Control	5

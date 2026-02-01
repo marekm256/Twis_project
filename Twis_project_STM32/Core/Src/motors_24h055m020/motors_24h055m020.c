@@ -119,18 +119,13 @@ static void motor_set_dir_right(motor_dir_t dir)
                       (dir == MOTOR_REV) ? GPIO_PIN_SET : GPIO_PIN_RESET);
 }
 
-// Electronic brake control
-void Motors_Brake(bool enable)
+// Driver enable control
+void Motors_SetEnable(bool enable)
 {
-  if (enable) {
-    // Active-LOW brake
-    HAL_GPIO_WritePin(L_BRAKE_GPIO_Port, L_BRAKE_Pin, GPIO_PIN_RESET);
-    HAL_GPIO_WritePin(R_BRAKE_GPIO_Port, R_BRAKE_Pin, GPIO_PIN_RESET);
-  } else {
-    // Open-drain
-    HAL_GPIO_WritePin(L_BRAKE_GPIO_Port, L_BRAKE_Pin, GPIO_PIN_SET);
-    HAL_GPIO_WritePin(R_BRAKE_GPIO_Port, R_BRAKE_Pin, GPIO_PIN_SET);
-  }
+    HAL_GPIO_WritePin(L_EN_GPIO_Port, L_EN_Pin,
+                      enable ? GPIO_PIN_SET : GPIO_PIN_RESET);
+    HAL_GPIO_WritePin(R_EN_GPIO_Port, R_EN_Pin,
+                      enable ? GPIO_PIN_SET : GPIO_PIN_RESET);
 }
 
 // Initializes the motor PWM control state: stops TIM2/TIM3 PWM outputs, resets ramp variables, and captures the initial tick time.
@@ -149,6 +144,8 @@ void Motors_Init(void)
     s_dirR = MOTOR_FWD;
     motor_set_dir_left(s_dirL);
     motor_set_dir_right(s_dirR);
+
+    Motors_SetEnable(true);
 }
 
 // Updates left/right "speed" in percent (0% => stop, 100% => 25 kHz, -100% => reverse 25kHz) using ramp.
@@ -206,27 +203,18 @@ void Motors_Control(uint8_t keys_state) {
 	float left  = 0.0f;
 	float right = 0.0f;
 
-	if (g_keys_state & KEY_SPACE) { // brake
-		left  = 0.0f;
-		right = 0.0f;
-		Motors_Speed_inPercent(left, right);
-		Motors_Brake(true);
-	} else {
-		Motors_Brake(false);
-
-		if (g_keys_state & KEY_W) { 		// forward
-			left  = -1.0f;
-			right = 1.0f;
-		} else if (g_keys_state & KEY_S) {  // reverse
-			left  = 1.0f;
-			right = -1.0f;
-		} else if (g_keys_state & KEY_A) {  // turn left
-			left  = 0.5f;
-			right = 0.5f;
-		} else if (g_keys_state & KEY_D) {  // turn right
-			left  = -0.5f;
-			right = -0.5f;
-		}
+	if (g_keys_state & KEY_W) { 		// forward
+		left  = -1.0f;
+		right = 1.0f;
+	} else if (g_keys_state & KEY_S) {  // reverse
+		left  = 1.0f;
+		right = -1.0f;
+	} else if (g_keys_state & KEY_A) {  // turn left
+		left  = 0.5f;
+		right = 0.5f;
+	} else if (g_keys_state & KEY_D) {  // turn right
+		left  = -0.5f;
+		right = -0.5f;
 	}
 
 	Motors_Speed_inPercent(left, right);
