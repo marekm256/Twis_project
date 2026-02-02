@@ -114,20 +114,23 @@ int main(void)
 	Motors_Control(g_keys_state);
 
 	uint32_t now = HAL_GetTick();
-	if (now - last_tx >= 100) {   // 10 Hz
+	if (now - last_tx >= 100) {   
 	  last_tx = now;
 
 	  IMU_ReadData(&imu);
 	  float dist_cm = Ultrasonic_ReadDistanceCM();
 
-		float v[8] = {
+		float v[11] = {
 		  imu.ax_g, imu.ay_g, imu.az_g,
 		  imu.gx_dps, imu.gy_dps, imu.gz_dps,
 		  imu.temp_c,
-		  dist_cm
+		  dist_cm,
+		  roll_deg,             
+ 		  mean_roll_deg,       
+          mean_dist_cm
 		};
 		
-		Comm_SendTelem8(v);
+		Comm_SendTelem11(v);
 	}
     /* USER CODE END WHILE */
 
