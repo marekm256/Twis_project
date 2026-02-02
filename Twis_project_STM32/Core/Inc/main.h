@@ -65,14 +65,14 @@ bool Key_w_IsPressed(void);
 #define L_PWM_GPIO_Port GPIOA
 #define L_EN_Pin GPIO_PIN_1
 #define L_EN_GPIO_Port GPIOA
-#define L_DIR_Pin GPIO_PIN_2
-#define L_DIR_GPIO_Port GPIOA
-#define R_DIR_Pin GPIO_PIN_5
+#define R_DIR_Pin GPIO_PIN_2
 #define R_DIR_GPIO_Port GPIOA
-#define R_EN_Pin GPIO_PIN_6
-#define R_EN_GPIO_Port GPIOA
+#define L_DIR_Pin GPIO_PIN_3
+#define L_DIR_GPIO_Port GPIOA
 #define R_PWM_Pin GPIO_PIN_7
 #define R_PWM_GPIO_Port GPIOA
+#define R_EN_Pin GPIO_PIN_4
+#define R_EN_GPIO_Port GPIOB
 
 /* USER CODE BEGIN Private defines */
 

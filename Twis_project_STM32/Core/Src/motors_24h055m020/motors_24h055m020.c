@@ -145,7 +145,7 @@ void Motors_Init(void)
     motor_set_dir_left(s_dirL);
     motor_set_dir_right(s_dirR);
 
-    Motors_SetEnable(true);
+    Motors_SetEnable(false);
 }
 
 // Updates left/right "speed" in percent (0% => stop, 100% => 25 kHz, -100% => reverse 25kHz) using ramp.
@@ -200,6 +200,26 @@ void Motors_Speed_inPercent(float left_pct, float right_pct)
 
 // Update motors speed via controls
 void Motors_Control(uint8_t keys_state) {
+	/* ===== LATCH (toggle) na KEY_E ===== */
+	static bool motors_enabled = false;
+	static bool prev_E = false;
+
+	bool curr_E = (keys_state & KEY_E) != 0u;
+
+	/* rising edge detekcia */
+	if (curr_E && !prev_E) {
+		motors_enabled = !motors_enabled;
+		Motors_SetEnable(motors_enabled);
+	}
+	prev_E = curr_E;
+
+	/* ===== ak nie sú motory povolené → STOP ===== */
+	if (!motors_enabled) {
+		Motors_Speed_inPercent(0.0f, 0.0f);
+		return;
+	}
+
+	/* ===== normálne riadenie ===== */
 	float left  = 0.0f;
 	float right = 0.0f;
 

@@ -97,8 +97,7 @@ int main(void)
   Comm_Init();
   uint32_t last_tx = 0;
 
-
-  //Motors_Init();
+  Motors_Init();
 
   Ultrasonic_Init(&htim1);
 
@@ -112,13 +111,7 @@ int main(void)
 
   while (1)
   {
-	//Motors_Control(g_keys_state);
-
-	if (IMU_Update() == 0) {
-		HAL_GPIO_WritePin(GPIOB, GPIO_PIN_3, GPIO_PIN_SET);
-	} else {
-		HAL_GPIO_WritePin(GPIOB, GPIO_PIN_3, GPIO_PIN_RESET);
-	}
+	Motors_Control(g_keys_state);
 
 	uint32_t now = HAL_GetTick();
 	if (now - last_tx >= 100) {   // 10 Hz
@@ -130,7 +123,7 @@ int main(void)
 		float v[8] = {
 		  imu.ax_g, imu.ay_g, imu.az_g,
 		  imu.gx_dps, imu.gy_dps, imu.gz_dps,
-		  IMU_Update(), //imu.temp_c,
+		  imu.temp_c,
 		  dist_cm
 		};
 		

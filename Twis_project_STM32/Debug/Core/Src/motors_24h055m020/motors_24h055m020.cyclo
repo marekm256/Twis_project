@@ -7,4 +7,4 @@
 ../Core/Src/motors_24h055m020/motors_24h055m020.c:123:6:Motors_SetEnable	1
 ../Core/Src/motors_24h055m020/motors_24h055m020.c:132:6:Motors_Init	1
 ../Core/Src/motors_24h055m020/motors_24h055m020.c:152:6:Motors_Speed_inPercent	23
-../Core/Src/motors_24h055m020/motors_24h055m020.c:202:6:Motors_Control	5
+../Core/Src/motors_24h055m020/motors_24h055m020.c:202:6:Motors_Control	8
