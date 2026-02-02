@@ -125,9 +125,9 @@ int main(void)
 		  imu.gx_dps, imu.gy_dps, imu.gz_dps,
 		  imu.temp_c,
 		  dist_cm,
-		  roll_deg,             
- 		  mean_roll_deg,       
-          mean_dist_cm
+		  1.0, //roll_deg,
+		  2.0, //mean_roll_deg,
+		  3.0 //mean_dist_cm
 		};
 		
 		Comm_SendTelem11(v);

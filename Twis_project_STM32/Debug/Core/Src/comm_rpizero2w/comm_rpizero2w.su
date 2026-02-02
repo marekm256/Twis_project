@@ -1,8 +1,7 @@
-../Core/Src/comm_rpizero2w/comm_rpizero2w.c:19:13:StartRx	8	static
+../Core/Src/comm_rpizero2w/comm_rpizero2w.c:14:13:StartRx	8	static
+../Core/Src/comm_rpizero2w/comm_rpizero2w.c:19:16:checksum_xor	24	static
 ../Core/Src/comm_rpizero2w/comm_rpizero2w.c:26:6:Comm_Init	8	static
-../Core/Src/comm_rpizero2w/comm_rpizero2w.c:34:6:Comm_Task	4	static
-../Core/Src/comm_rpizero2w/comm_rpizero2w.c:39:6:HAL_UART_RxCpltCallback	24	static
-../Core/Src/comm_rpizero2w/comm_rpizero2w.c:73:16:checksum_xor	24	static
-../Core/Src/comm_rpizero2w/comm_rpizero2w.c:80:6:Comm_SendDistance	24	static
-../Core/Src/comm_rpizero2w/comm_rpizero2w.c:96:6:Comm_SendTelem8	56	static
-../Core/Src/comm_rpizero2w/comm_rpizero2w.c:111:6:HAL_UART_ErrorCallback	16	static
+../Core/Src/comm_rpizero2w/comm_rpizero2w.c:33:6:Comm_Task	4	static
+../Core/Src/comm_rpizero2w/comm_rpizero2w.c:38:6:HAL_UART_RxCpltCallback	24	static
+../Core/Src/comm_rpizero2w/comm_rpizero2w.c:71:6:HAL_UART_ErrorCallback	16	static
+../Core/Src/comm_rpizero2w/comm_rpizero2w.c:78:6:Comm_SendTelem11	64	static
