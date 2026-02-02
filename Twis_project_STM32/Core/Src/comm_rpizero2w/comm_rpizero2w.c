@@ -1,39 +1,38 @@
 #include "comm_rpizero2w.h"
-
 #include <string.h>
 
-
-#define MSG_DISTANCE 0xD1
 #define START_BYTE  0xAB
 #define FRAME_LEN   3
-#define TIMEOUT_MS  500
-#define MSG_TELEM 0xD2
+#define MSG_TELEM   0xD2  
 
 volatile uint8_t g_keys_state = 0;
 
 static uint8_t rx_byte;
 static uint8_t frame[FRAME_LEN];
 static uint8_t idx = 0;
-static uint32_t last_rx_ms = 0;
 
 static void StartRx(void)
 {
   (void)HAL_UART_Receive_IT(&huart1, &rx_byte, 1);
 }
 
-static uint8_t checksum_xor(const uint8_t *p, uint8_t n);
+static uint8_t checksum_xor(const uint8_t *p, uint8_t n)
+{
+  uint8_t c = 0;
+  for (uint8_t i = 0; i < n; i++) c ^= p[i];
+  return c;
+}
 
 void Comm_Init(void)
 {
   idx = 0;
   g_keys_state = 0;
-  last_rx_ms = HAL_GetTick();
   StartRx();
 }
 
 void Comm_Task(void)
 {
-
+  
 }
 
 void HAL_UART_RxCpltCallback(UART_HandleTypeDef *huart)
@@ -56,13 +55,12 @@ void HAL_UART_RxCpltCallback(UART_HandleTypeDef *huart)
 
       if (((uint8_t)(state ^ 0xFF)) == chk) {
         g_keys_state = state;
-        last_rx_ms = HAL_GetTick();
 
         if (g_keys_state) {
-			HAL_GPIO_WritePin(GPIOB, GPIO_PIN_3, GPIO_PIN_SET);
-		} else {
-			HAL_GPIO_WritePin(GPIOB, GPIO_PIN_3, GPIO_PIN_RESET);
-		}
+          HAL_GPIO_WritePin(GPIOB, GPIO_PIN_3, GPIO_PIN_SET);
+        } else {
+          HAL_GPIO_WritePin(GPIOB, GPIO_PIN_3, GPIO_PIN_RESET);
+        }
       }
     }
   }
@@ -70,47 +68,25 @@ void HAL_UART_RxCpltCallback(UART_HandleTypeDef *huart)
   StartRx();
 }
 
-static uint8_t checksum_xor(const uint8_t *p, uint8_t n)
-{
-  uint8_t c = 0;
-  for (uint8_t i = 0; i < n; i++) c ^= p[i];
-  return c;
-}
-
-void Comm_SendDistance(float dist_m)
-{
-  uint8_t tx[7];
-  tx[0] = START_BYTE;
-  tx[1] = MSG_DISTANCE;
-
-  // skopíruj float do bajtov (IEEE754)
-  memcpy(&tx[2], &dist_m, sizeof(float));
-
-  // checksum z bajtov [1..5] (typ + float)
-  tx[6] = checksum_xor(&tx[1], 1 + 4);
-
-  // blokujúco, na testovanie je to najjednoduchšie
-  HAL_UART_Transmit(&huart1, tx, sizeof(tx), 50);
-}
-
-void Comm_SendTelem8(const float v[8])
-{
-  uint8_t tx[1 + 1 + 1 + 32 + 1]; // START + TYPE + LEN + payload + CHK
-  tx[0] = START_BYTE;
-  tx[1] = MSG_TELEM;
-  tx[2] = 32; // 8 floats
-
-  memcpy(&tx[3], v, 32);
-
-  // CHK z [TYPE, LEN, PAYLOAD]
-  tx[3 + 32] = checksum_xor(&tx[1], 1 + 1 + 32);
-
-  HAL_UART_Transmit(&huart1, tx, sizeof(tx), 50);
-}
-
 void HAL_UART_ErrorCallback(UART_HandleTypeDef *huart)
 {
   if (huart->Instance != USART1) return;
   idx = 0;
   StartRx();
+}
+
+void Comm_SendTelem11(const float v[11])
+{
+  
+  uint8_t tx[1 + 1 + 1 + 44 + 1];
+  tx[0] = START_BYTE;
+  tx[1] = MSG_TELEM;
+  tx[2] = 44; // 11 floats
+
+  memcpy(&tx[3], v, 44);
+
+  
+  tx[3 + 44] = checksum_xor(&tx[1], 1 + 1 + 44);
+
+  HAL_UART_Transmit(&huart1, tx, sizeof(tx), 50);
 }
