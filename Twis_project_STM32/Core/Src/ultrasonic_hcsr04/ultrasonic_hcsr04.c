@@ -7,7 +7,6 @@
 
 //
 #include "ultrasonic_hcsr04.h"
-
 /* TRIG = PA12 */
 #define TRIG_PORT GPIOA
 #define TRIG_PIN  GPIO_PIN_12
@@ -48,6 +47,9 @@ void Ultrasonic_Init(TIM_HandleTypeDef *htim)
     HAL_GPIO_WritePin(TRIG_PORT, TRIG_PIN, GPIO_PIN_RESET);
 }
 
+/* ✅ Zachovaná funkcia – len opravený výstup na CM
+   vráti centimetre, -1 pri chybe
+*/
 float Ultrasonic_ReadDistanceCM(void)
 {
     uint32_t t_us;
@@ -72,6 +74,31 @@ float Ultrasonic_ReadDistanceCM(void)
 
     t_us = __HAL_TIM_GET_COUNTER(u_htim);
 
-    /* prepočet na centimetre: t_us / 5.82 */
-    return (float)t_us / 5.82f;
+    return (float)t_us / 5.83f;
+}
+
+/* ✅ NOVÁ funkcia navyše: priemer z N meraní (v cm) */
+float Ultrasonic_ReadDistanceAvg(uint8_t samples)
+{
+    if (samples == 0) return -1.0f;
+
+    float sum = 0.0f;
+    uint8_t valid = 0;
+
+    for (uint8_t i = 0; i < samples; i++)
+    {
+        float d_cm = Ultrasonic_ReadDistanceCM();  // už vracia cm
+
+        /* ošetrenie bludov: povolíme rozumný rozsah HC-SR04 */
+        if (d_cm >= 2.0f && d_cm <= 400.0f)
+        {
+            sum += d_cm;
+            valid++;
+        }
+
+        HAL_Delay(10); // krátka pauza medzi meraniami
+    }
+
+    if (valid == 0) return -1.0f;
+    return sum / (float)valid;
 }

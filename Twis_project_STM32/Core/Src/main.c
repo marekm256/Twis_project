@@ -111,26 +111,28 @@ int main(void)
 
   while (1)
   {
-	Motors_Control(g_keys_state);
+	IMU_ReadData(&imu);
+
+	float d_cm     = Ultrasonic_ReadDistanceCM();
+	float d_avg_cm = Ultrasonic_ReadDistanceAvg(5);
+
+	Motors_Control(g_keys_state, imu.roll_degmean, imu.gy_dps, d_avg_cm);
 
 	uint32_t now = HAL_GetTick();
 	if (now - last_tx >= 100) {   
 	  last_tx = now;
 
-	  IMU_ReadData(&imu);
-	  float dist_cm = Ultrasonic_ReadDistanceCM();
+      float v[11] = {
+	    imu.ax_g, imu.ay_g, imu.az_g,
+	    imu.gx_dps, imu.gy_dps, imu.gz_dps,
+	    imu.temp_c,
+	    d_cm,
+	    imu.roll_deg,
+		imu.roll_degmean, //mean_roll_deg,
+	    d_avg_cm
+	  };
 
-		float v[11] = {
-		  imu.ax_g, imu.ay_g, imu.az_g,
-		  imu.gx_dps, imu.gy_dps, imu.gz_dps,
-		  imu.temp_c,
-		  dist_cm,
-		  1.0, //roll_deg,
-		  2.0, //mean_roll_deg,
-		  3.0 //mean_dist_cm
-		};
-		
-		Comm_SendTelem11(v);
+	  Comm_SendTelem11(v);
 	}
     /* USER CODE END WHILE */
 

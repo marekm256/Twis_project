@@ -1,4 +1,5 @@
-../Core/Src/ultrasonic_hcsr04/ultrasonic_hcsr04.c:22:13:delay_us	2
-../Core/Src/ultrasonic_hcsr04/ultrasonic_hcsr04.c:31:12:wait_echo	3
-../Core/Src/ultrasonic_hcsr04/ultrasonic_hcsr04.c:42:6:Ultrasonic_Init	1
-../Core/Src/ultrasonic_hcsr04/ultrasonic_hcsr04.c:51:7:Ultrasonic_ReadDistanceCM	3
+../Core/Src/ultrasonic_hcsr04/ultrasonic_hcsr04.c:21:13:delay_us	2
+../Core/Src/ultrasonic_hcsr04/ultrasonic_hcsr04.c:30:12:wait_echo	3
+../Core/Src/ultrasonic_hcsr04/ultrasonic_hcsr04.c:41:6:Ultrasonic_Init	1
+../Core/Src/ultrasonic_hcsr04/ultrasonic_hcsr04.c:53:7:Ultrasonic_ReadDistanceCM	3
+../Core/Src/ultrasonic_hcsr04/ultrasonic_hcsr04.c:81:7:Ultrasonic_ReadDistanceAvg	6

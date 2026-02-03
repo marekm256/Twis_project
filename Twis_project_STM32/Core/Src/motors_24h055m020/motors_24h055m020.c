@@ -9,6 +9,8 @@
 
 #include "main.h"
 #include "tim.h"
+#include <stdbool.h>
+#include <math.h>
 
 #include "../comm_rpizero2w/comm_rpizero2w.h"
 
@@ -21,7 +23,7 @@
 
 /* Manual ramp tuning (edit here) */
 static uint32_t g_step_period_ms = 10u;  /* update period */
-static float    g_step_pct       = 1.0f; /* percent per step; <=0 => no ramp (jump) */
+static float    g_step_pct       = 0.25f; /* percent per step; <=0 => no ramp (jump) */
 
 static float s_curL = 0.0f, s_curR = 0.0f;
 static float s_tgtL = 0.0f, s_tgtR = 0.0f;
@@ -151,9 +153,11 @@ void Motors_Init(void)
 // Updates left/right "speed" in percent (0% => stop, 100% => 25 kHz, -100% => reverse 25kHz) using ramp.
 void Motors_Speed_inPercent(float left_pct, float right_pct)
 {
+    /* Determine requested direction from the sign */
     motor_dir_t reqDirL = (left_pct  < 0.0f) ? MOTOR_REV : MOTOR_FWD;
     motor_dir_t reqDirR = (right_pct < 0.0f) ? MOTOR_REV : MOTOR_FWD;
 
+    /* Absolute magnitude in percent */
     float absL = (left_pct  < 0.0f) ? -left_pct  : left_pct;
     float absR = (right_pct < 0.0f) ? -right_pct : right_pct;
 
@@ -163,16 +167,38 @@ void Motors_Speed_inPercent(float left_pct, float right_pct)
     bool wantFlipL = (reqDirL != s_dirL);
     bool wantFlipR = (reqDirR != s_dirR);
 
-    if (wantFlipL && s_curL > 0.0f) absL = 0.0f;
-    if (wantFlipR && s_curR > 0.0f) absR = 0.0f;
+    /* If currently stopped, apply direction change immediately before ramping up */
+    const float ZERO_EPS = 0.0001f;
+
+    if (wantFlipL && (s_curL <= ZERO_EPS)) {
+        s_dirL = reqDirL;
+        motor_set_dir_left(s_dirL);
+        wantFlipL = false; /* direction is now correct */
+    }
+
+    if (wantFlipR && (s_curR <= ZERO_EPS)) {
+        s_dirR = reqDirR;
+        motor_set_dir_right(s_dirR);
+        wantFlipR = false; /* direction is now correct */
+    }
+
+    /* If moving and direction needs to change, force target to 0 first */
+    if (wantFlipL && (s_curL > ZERO_EPS)) absL = 0.0f;
+    if (wantFlipR && (s_curR > ZERO_EPS)) absR = 0.0f;
 
     s_tgtL = absL;
     s_tgtR = absR;
 
     uint32_t now = HAL_GetTick();
-    if ((now - s_lastTick) < g_step_period_ms) return;
+    if ((now - s_lastTick) < g_step_period_ms) {
+        /* Even if we skip ramp update, outputs are based on current s_cur */
+        pwm_set_freq_50pct(&LEFT_TIM,  LEFT_CH,  &s_runL, pct_to_freq_hz(s_curL));
+        pwm_set_freq_50pct(&RIGHT_TIM, RIGHT_CH, &s_runR, pct_to_freq_hz(s_curR));
+        return;
+    }
     s_lastTick = now;
 
+    /* Ramp toward target */
     float step = g_step_pct;
     if (step <= 0.0f) {
         s_curL = s_tgtL;
@@ -185,58 +211,165 @@ void Motors_Speed_inPercent(float left_pct, float right_pct)
         else if (s_curR > s_tgtR) { s_curR -= step; if (s_curR < s_tgtR) s_curR = s_tgtR; }
     }
 
-    if (wantFlipL && s_curL == 0.0f) {
+    /* When we have ramped down to zero, apply direction change */
+    if ((reqDirL != s_dirL) && (s_curL <= ZERO_EPS)) {
         s_dirL = reqDirL;
         motor_set_dir_left(s_dirL);
     }
-    if (wantFlipR && s_curR == 0.0f) {
+    if ((reqDirR != s_dirR) && (s_curR <= ZERO_EPS)) {
         s_dirR = reqDirR;
         motor_set_dir_right(s_dirR);
     }
 
+    /* Update PWM outputs */
     pwm_set_freq_50pct(&LEFT_TIM,  LEFT_CH,  &s_runL, pct_to_freq_hz(s_curL));
     pwm_set_freq_50pct(&RIGHT_TIM, RIGHT_CH, &s_runR, pct_to_freq_hz(s_curR));
 }
 
+
 // Update motors speed via controls
-void Motors_Control(uint8_t keys_state) {
-	/* ===== LATCH (toggle) na KEY_E ===== */
-	static bool motors_enabled = false;
-	static bool prev_E = false;
-
-	bool curr_E = (keys_state & KEY_E) != 0u;
-
-	/* rising edge detekcia */
-	if (curr_E && !prev_E) {
-		motors_enabled = !motors_enabled;
-		Motors_SetEnable(motors_enabled);
-	}
-	prev_E = curr_E;
-
-	/* ===== ak nie sú motory povolené → STOP ===== */
-	if (!motors_enabled) {
-		Motors_Speed_inPercent(0.0f, 0.0f);
-		return;
-	}
-
-	/* ===== normálne riadenie ===== */
-	float left  = 0.0f;
-	float right = 0.0f;
-
-	if (g_keys_state & KEY_W) { 		// forward
-		left  = -1.0f;
-		right = 1.0f;
-	} else if (g_keys_state & KEY_S) {  // reverse
-		left  = 1.0f;
-		right = -1.0f;
-	} else if (g_keys_state & KEY_A) {  // turn left
-		left  = 0.5f;
-		right = 0.5f;
-	} else if (g_keys_state & KEY_D) {  // turn right
-		left  = -0.5f;
-		right = -0.5f;
-	}
-
-	Motors_Speed_inPercent(left, right);
+static inline float clampf(float x, float lo, float hi)
+{
+    if (x < lo) return lo;
+    if (x > hi) return hi;
+    return x;
 }
 
+void Motors_Control(uint8_t keys_state, float ay, float gyro_y, float d_avg_cm)
+{
+    /* ===== KEY_E latch (toggle enable) ===== */
+    static bool motors_enabled = false;
+    static bool prev_E = false;
+
+    /* ===== Home calibration state ===== */
+    static bool ay_calibrating = false;
+    static bool ay_home_valid  = false;
+    static float ay_home       = 0.0f;
+    static float ay_sum        = 0.0f;
+    static uint16_t ay_cnt     = 0;
+
+    const uint16_t AY_CALIB_SAMPLES = 50;  /* number of samples to average */
+
+    bool curr_E = (keys_state & KEY_E) != 0u;
+
+    /* Rising edge detection on KEY_E */
+    if (curr_E && !prev_E) {
+        motors_enabled = !motors_enabled;
+        Motors_SetEnable(motors_enabled);
+
+        /* Start calibration when motors are enabled */
+        if (motors_enabled) {
+            ay_calibrating = true;
+            ay_home_valid  = false;
+            ay_sum = 0.0f;
+            ay_cnt = 0;
+        }
+    }
+    prev_E = curr_E;
+
+    /* ===== Motors disabled → hard stop ===== */
+    if (!motors_enabled) {
+        Motors_Speed_inPercent(0.0f, 0.0f);
+        return;
+    }
+
+    /* ===== Home calibration in progress ===== */
+    if (ay_calibrating) {
+        ay_sum += ay;
+        ay_cnt++;
+
+        if (ay_cnt >= AY_CALIB_SAMPLES) {
+            ay_home = ay_sum / (float)ay_cnt;
+            ay_home_valid = true;
+            ay_calibrating = false;
+        }
+
+        /* Keep motors stopped during calibration */
+        Motors_Speed_inPercent(0.0f, 0.0f);
+        return;
+    }
+
+    /* Use ay relative to calibrated home */
+    float ay_rel = ay_home_valid ? (ay - ay_home) : ay;
+
+
+    /* ===== 1) User command from keyboard ===== */
+    float drive = 0.0f;   // forward / backward
+    float turn  = 0.0f;   // left / right rotation
+
+    /* Obstacle gate */
+    const float OBST_STOP_CM = 25.0f;
+    bool obstacle_close = (d_avg_cm > 0.0f) && (d_avg_cm <= OBST_STOP_CM);
+
+    if (keys_state & KEY_W) {
+        /* Block forward if obstacle is too close */
+        drive = obstacle_close ? 0.0f : +1.0f;
+    } else if (keys_state & KEY_S) {
+        drive = -1.0f;  /* reverse always allowed */
+    }
+
+    if (keys_state & KEY_A) {
+        turn = -0.5f;
+    } else if (keys_state & KEY_D) {
+        turn = +0.5f;
+    }
+
+
+    /* ===== Stabilization from tilt (P with shaping + damping hacks) ===== */
+    const float AY_DB_DEG     = 0.4f;   /* deadband */
+    const float ANGLE_FULL_DEG= 6.0f;   /* angle at which stab reaches STAB_LIMIT */
+    const float STAB_LIMIT    = 0.35f;  /* start smaller */
+
+    float a = ay_rel;
+
+    /* Low-pass on angle (reduces noise / chatter) */
+    static float a_lp = 0.0f;
+    const float A_ALPHA = 0.15f;        /* 0..1 */
+    a_lp += A_ALPHA * (a - a_lp);
+    a = a_lp;
+
+    /* Deadband */
+    if (fabsf(a) < AY_DB_DEG) a = 0.0f;
+
+    /* Map angle -> stabilization magnitude 0..STAB_LIMIT */
+    float mag = fabsf(a);
+    float stab_mag = 0.0f;
+    if (mag > 0.0f) {
+        float t = mag / ANGLE_FULL_DEG;           /* 0.. */
+        if (t > 1.0f) t = 1.0f;                   /* clamp */
+        stab_mag = t * STAB_LIMIT;                /* 0..STAB_LIMIT */
+    }
+
+    /* Restore sign (counteract tilt) */
+    float stab_target = (a >= 0.0f) ? -stab_mag : +stab_mag;
+
+    /* Slew-rate limit on stab (adds artificial damping) */
+    static float stab_cmd = 0.0f;
+    const float STAB_SLEW = 0.02f;       /* max change per call (tune) */
+
+    if (stab_cmd < stab_target) {
+        stab_cmd += STAB_SLEW;
+        if (stab_cmd > stab_target) stab_cmd = stab_target;
+    } else if (stab_cmd > stab_target) {
+        stab_cmd -= STAB_SLEW;
+        if (stab_cmd < stab_target) stab_cmd = stab_target;
+    }
+
+    float stab = stab_cmd;
+
+
+    /* ===== Mixing =====
+       Motor convention:
+         forward: left = -1, right = +1
+    */
+    float u = drive + stab;
+
+    float left  = -u - turn;
+    float right = +u - turn;
+
+    /* Final saturation */
+    left  = clampf(left,  -1.0f, +1.0f);
+    right = clampf(right, -1.0f, +1.0f);
+
+    Motors_Speed_inPercent(left, right);
+}
