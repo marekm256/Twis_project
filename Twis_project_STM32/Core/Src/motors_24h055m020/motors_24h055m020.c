@@ -235,7 +235,7 @@ static inline float clampf(float x, float lo, float hi)
     return x;
 }
 
-void Motors_Control(uint8_t keys_state, float ay, float gyro_y, float d_avg_cm)
+void Motors_Control(uint8_t keys_state, float ay, float d_avg_cm)
 {
     /* ===== KEY_E latch (toggle enable) ===== */
     static bool motors_enabled = false;

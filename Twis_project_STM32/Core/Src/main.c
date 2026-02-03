@@ -116,7 +116,7 @@ int main(void)
 	float d_cm     = Ultrasonic_ReadDistanceCM();
 	float d_avg_cm = Ultrasonic_ReadDistanceAvg(5);
 
-	Motors_Control(g_keys_state, imu.roll_degmean, imu.gy_dps, d_avg_cm);
+	Motors_Control(g_keys_state, imu.roll_degmean, d_avg_cm);
 
 	uint32_t now = HAL_GetTick();
 	if (now - last_tx >= 100) {   

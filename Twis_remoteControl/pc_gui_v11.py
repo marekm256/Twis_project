@@ -9,7 +9,7 @@ import tkinter as tk
 from tkinter import ttk
 
 # === Nastav si IP RPi (tailscale / LAN) ===
-RPI_IP = "192.168.137.102"
+RPI_IP = "192.168.137.2"
 CMD_PORT = 5005          # posielanie state -> RPi
 TEL_PORT = 5006          # prijímanie telemetry <- RPi
 
